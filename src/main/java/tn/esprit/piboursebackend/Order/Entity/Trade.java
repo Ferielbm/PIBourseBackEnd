@@ -2,20 +2,24 @@ package tn.esprit.piboursebackend.Order.Entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
 import tn.esprit.piboursebackend.Marche.Entity.Stock;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 @Entity
-@Getter
-@Setter
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Trade {
+
+    private static final int SCALE = 6;
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Version
+    private Long version;
 
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "stock_id", nullable = false)
@@ -35,6 +39,13 @@ public class Trade {
     @Column(nullable = false, precision = 19, scale = 6)
     private BigDecimal quantity;
 
-    @Column(nullable = false)
-    private LocalDateTime executedAt = LocalDateTime.now();
+    @CreationTimestamp
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime executedAt;
+
+    @PrePersist
+    public void onPersist() {
+        if (price != null)    price    = price.setScale(SCALE, RoundingMode.HALF_UP);
+        if (quantity != null) quantity = quantity.setScale(SCALE, RoundingMode.HALF_UP);
+    }
 }
