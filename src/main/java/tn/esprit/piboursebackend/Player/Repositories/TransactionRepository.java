@@ -1,6 +1,6 @@
-package com.example.pibourse.Repositories;
+package tn.esprit.piboursebackend.Player.Repositories;
 
-import com.example.pibourse.Entities.Transaction;
+import tn.esprit.piboursebackend.Player.Entities.Transaction;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

@@ -1,4 +1,4 @@
-package com.example.pibourse.Entities;
+package tn.esprit.piboursebackend.Player.Entities;
 
 public enum Role {
 

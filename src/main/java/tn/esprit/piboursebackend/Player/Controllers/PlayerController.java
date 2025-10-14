@@ -1,7 +1,7 @@
-package com.example.pibourse.Controllers;
+package tn.esprit.piboursebackend.Player.Controllers;
 
-import com.example.pibourse.Entities.Player;
-import com.example.pibourse.Services.PlayerService;
+import tn.esprit.piboursebackend.Player.Entities.Player;
+import tn.esprit.piboursebackend.Player.Services.PlayerService;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;

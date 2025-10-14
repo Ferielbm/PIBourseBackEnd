@@ -1,6 +1,6 @@
-package com.example.pibourse.Services;
+package tn.esprit.piboursebackend.Player.Services;
 
-import com.example.pibourse.Entities.Player;
+import tn.esprit.piboursebackend.Player.Entities.Player;
 import java.util.List;
 import java.util.UUID;
 

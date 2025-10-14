@@ -1,7 +1,7 @@
-package com.example.pibourse.Services;
+package tn.esprit.piboursebackend.Player.Services;
 
-import com.example.pibourse.Entities.Transaction;
-import com.example.pibourse.Repositories.TransactionRepository;
+import tn.esprit.piboursebackend.Player.Entities.Transaction;
+import tn.esprit.piboursebackend.Player.Repositories.TransactionRepository;
 import org.springframework.stereotype.Service;
 import java.util.List;
 

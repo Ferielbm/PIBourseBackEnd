@@ -1,7 +1,6 @@
-package com.example.pibourse.Entities;
+package tn.esprit.piboursebackend.Player.Entities;
 
 import jakarta.persistence.*;
-import java.time.LocalDateTime;
 
 @Entity
 public class Transaction {
