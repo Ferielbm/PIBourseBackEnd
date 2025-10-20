@@ -1,5 +1,9 @@
 package tn.esprit.piboursebackend.Marche.Entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
@@ -14,6 +18,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 @Table(name = "stocks")
+@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "symbol")
 public class Stock {
     @Id
     @Column(name = "symbol", unique = true, nullable = false)
@@ -33,19 +38,18 @@ public class Stock {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "market_code", referencedColumnName = "code")
+    @JsonBackReference("market-stocks")
     private Market market;
 
     @OneToMany(mappedBy = "stock", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonManagedReference("stock-priceHistory")
     private List<PriceHistory> priceHistoryList = new ArrayList<>();
 
     @OneToOne(mappedBy = "stock", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonManagedReference("stock-orderBook")
     private OrderBook orderBook;
 
-    @OneToMany(mappedBy = "stock", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<CircuitBreaker> circuitBreakers = new ArrayList<>();
 
-    @OneToMany(mappedBy = "stock", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    private List<Anomaly> anomalies = new ArrayList<>();
 
     @Column(name = "created_at")
     private LocalDateTime createdAt = LocalDateTime.now();

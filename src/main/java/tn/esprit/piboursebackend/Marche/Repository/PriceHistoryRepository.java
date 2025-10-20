@@ -1,10 +1,13 @@
 package tn.esprit.piboursebackend.Marche.Repository;
 
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import tn.esprit.piboursebackend.Marche.Entity.PriceHistory;
+
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -31,4 +34,10 @@ public interface PriceHistoryRepository extends JpaRepository<PriceHistory, Long
 
     @Query("SELECT ph FROM PriceHistory ph WHERE ph.stock.symbol = :symbol AND ph.dateTime = (SELECT MAX(ph2.dateTime) FROM PriceHistory ph2 WHERE ph2.stock.symbol = :symbol)")
     Optional<PriceHistory> findMostRecentBySymbol(@Param("symbol") String symbol);
+
+    @Query("SELECT ph FROM PriceHistory ph WHERE ph.stock.symbol = :symbol AND ph.dateTime <= :date ORDER BY ph.dateTime DESC")
+    List<PriceHistory> findByStock_SymbolAndDateTimeBeforeOrderByDateTimeDesc(
+            @Param("symbol") String symbol,
+            @Param("date") LocalDateTime date,
+            Pageable pageable);
 }

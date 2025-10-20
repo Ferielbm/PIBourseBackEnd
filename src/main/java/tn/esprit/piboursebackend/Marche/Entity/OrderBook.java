@@ -1,5 +1,8 @@
 package tn.esprit.piboursebackend.Marche.Entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
@@ -12,6 +15,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 @Table(name = "order_books")
+@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 public class OrderBook {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -28,6 +32,7 @@ public class OrderBook {
 
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "stock_symbol", referencedColumnName = "symbol")
+    @JsonBackReference("stock-orderBook")
     private Stock stock;
 
     @Column(name = "total_bid_volume")
