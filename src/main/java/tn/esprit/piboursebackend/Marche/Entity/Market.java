@@ -14,11 +14,13 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Table(name = "markets")
 public class Market {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "market_date")
     private LocalDateTime currentDate;    // Date courante simulée
     private Boolean isOpen;               // Marché ouvert/fermé
     private BigDecimal timeCompressionRatio;  // Ex: 1h réelle = 1 semaine simulée

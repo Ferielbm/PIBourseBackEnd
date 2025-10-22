@@ -1,33 +1,45 @@
 package tn.esprit.piboursebackend.Player.Entities;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
+
+import java.time.LocalDateTime;
 
 @Entity
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+@Table(name = "transactions")
 public class Transaction {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String type; // BUY, SELL, DEPOSIT, WITHDRAW
-    private double amount;
+    @Enumerated(EnumType.STRING)
+    @NotNull(message = "Transaction type is required")
+    @Column(nullable = false)
+    private TransactionType type;
 
+    @NotNull(message = "Amount is required")
+    @Positive(message = "Amount must be positive")
+    @Column(nullable = false)
+    private Double amount;
 
-    @ManyToOne
-    @JoinColumn(name = "player_id")
+    @CreationTimestamp
+    @Column(nullable = false, updatable = false)
+    private LocalDateTime createdAt;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "player_id", nullable = false)
+    @JsonBackReference
     private Player player;
-
-    // Getters et setters
-    public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
-
-    public String getType() { return type; }
-    public void setType(String type) { this.type = type; }
-
-    public double getAmount() { return amount; }
-    public void setAmount(double amount) { this.amount = amount; }
-
-
-    public Player getPlayer() { return player; }
-    public void setPlayer(Player player) { this.player = player; }
 }

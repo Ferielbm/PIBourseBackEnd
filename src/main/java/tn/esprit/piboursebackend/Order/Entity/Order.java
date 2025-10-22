@@ -9,11 +9,13 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 @Entity
+@Table(name = "`order`")  // Échapper "order" car c'est un mot réservé SQL
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Table(name = "orders")
 public class Order {
 
  @Id

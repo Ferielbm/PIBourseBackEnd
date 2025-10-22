@@ -15,6 +15,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Table(name = "stocks")
 public class Stock {
 
     @Id
@@ -22,16 +23,15 @@ public class Stock {
     private Long id;
 
     private String symbol;            // Ex: AAPL
-    private String companyName;       // Nom de l’entreprise
+    private String companyName;       // Nom de l'entreprise
     private String sector;            // Ex: Technology
     private BigDecimal marketCap;         // Capitalisation boursière
-    @OneToOne(optional = false, fetch = FetchType.LAZY)
-    private Position position ;
-
-    @OneToOne(optional = false, fetch = FetchType.LAZY)
-    private Portfolio portfolio;
-   @OneToMany(mappedBy = "stock", cascade = CascadeType.ALL)
-
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "market_id")
+    private Market market;
+    
+    @OneToMany(mappedBy = "stock", cascade = CascadeType.ALL)
     private List<PriceHistory> priceHistoryList = new ArrayList<>();
 
    /* @OneToOne(mappedBy = "stock", cascade = CascadeType.ALL)
