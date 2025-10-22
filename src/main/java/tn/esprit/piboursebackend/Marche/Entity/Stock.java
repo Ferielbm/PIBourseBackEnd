@@ -17,23 +17,24 @@ import java.util.List;
 @Builder
 public class Stock {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String symbol;            // Ex: AAPL
-    private String companyName;       // Nom de l’entreprise
-    private String sector;            // Ex: Technology
-    private BigDecimal marketCap;         // Capitalisation boursière
-    @OneToOne(optional = false, fetch = FetchType.LAZY)
-    private Position position ;
+    @Column(nullable=false, unique=true)
+    private String symbol;             // e.g., "AAPL"
 
-    @OneToOne(optional = false, fetch = FetchType.LAZY)
-    private Portfolio portfolio;
-   @OneToMany(mappedBy = "stock", cascade = CascadeType.ALL)
+    @Column(nullable=false, length=3)
+    private String currency;           // e.g., "USD", "TND"
 
+    private String companyName;        // optional
+    private String sector;             // optional
+
+    @Column(precision=24, scale=6)
+    private BigDecimal marketCap;      // optional
+
+    @Column(precision=20, scale=6)
+    private BigDecimal lastPrice;      // last known price in Stock.currency
+
+    @OneToMany(mappedBy = "stock", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PriceHistory> priceHistoryList = new ArrayList<>();
-
-   /* @OneToOne(mappedBy = "stock", cascade = CascadeType.ALL)
-    private OrderBook orderBook;      // Lien vers le carnet d’ordres*/
 }

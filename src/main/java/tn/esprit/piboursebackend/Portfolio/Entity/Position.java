@@ -17,9 +17,13 @@ public class Position {
     private Long positionId;
 
     private Integer quantity;
+    @Column(precision=20, scale=6)
     private BigDecimal averagePrice;
+
+    @Transient
     private BigDecimal currentValue;
-    @OneToOne(optional = false, fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "stock_id", nullable = false)
     private Stock stock;
 
     // ✅ Correct: each Position belongs to ONE Portfolio (not a list)

@@ -5,6 +5,7 @@ import lombok.*;
 import tn.esprit.piboursebackend.Marche.Entity.Stock;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,40 +15,26 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Table(name = "portfolio")
 public class Portfolio {
-    @Id
-    @GeneratedValue
-    private Long portfolioId;
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
 
-    private BigDecimal totalValue;
-    private BigDecimal unrealizedPnL;
-    private BigDecimal realizedPnL;
+    @Column(nullable=false, length=3)
+    private String baseCurrency = "TND";
 
-    // ✅ Correct: a Portfolio belongs to ONE Player
- /*   @ManyToOne
-    @JoinColumn(name = "player_id", nullable = false)
-    private Player player;
-*/
+    @Enumerated(EnumType.STRING)
+    @Column(nullable=false, length=16)
+    private Status status = Status.ACTIVE;
 
-    @OneToOne(optional = false, fetch = FetchType.LAZY)
-    private Stock stock;
-    // ✅ Correct: One portfolio can have many positions
-    @OneToMany(mappedBy = "portfolio", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Position> positions = new ArrayList<>();
+    @Column(nullable=false, updatable=false)
+    private Instant createdAt = Instant.now();
 
-    public BigDecimal calculateTotalValue() {
-        return positions.stream()
-                .map(Position::getCurrentValue)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-    }
+    @Column(nullable=false)
+    private Instant updatedAt = Instant.now();
 
-    public void addPosition(Position position) {
-        positions.add(position);
-        position.setPortfolio(this);
-    }
+    public enum Status { ACTIVE, ARCHIVED }
 
-    public void removePosition(Position position) {
-        positions.remove(position);
-        position.setPortfolio(null);
-    }
+    @PreUpdate void touch(){ this.updatedAt = Instant.now(); }
+
 }
