@@ -1,0 +1,174 @@
+========================================
+LISTE COMPLÈTE DES FICHIERS CRÉÉS/MODIFIÉS
+========================================
+
+📅 Date : 23 octobre 2025
+🎯 Objectif : Fonctionnalité "Mot de passe oublié" + Fix erreur 500 Swagger + Base de données de test
+
+========================================
+FICHIERS MODIFIÉS (3)
+========================================
+
+1. pom.xml
+   - Ajout dépendance spring-boot-starter-mail
+   - Mise à jour springdoc-openapi 2.3.0 → 2.6.0
+
+2. src/main/java/tn/esprit/piboursebackend/Player/Config/SwaggerConfig.java
+   - Configuration JWT complète
+   - Schémas de sécurité
+   - Composants OpenAPI
+
+3. src/main/resources/application.properties
+   - Configuration SMTP (Gmail)
+   - Configuration Swagger améliorée
+   - Configuration reset password
+
+4. src/main/java/tn/esprit/piboursebackend/Player/Controllers/AuthController.java
+   - Ajout 3 endpoints : forgot-password, validate-reset, reset-password
+   - Imports DTOs reset password
+
+========================================
+FICHIERS CRÉÉS - CODE JAVA (6)
+========================================
+
+ENTITÉS
+1. src/main/java/tn/esprit/piboursebackend/Player/Entities/PasswordResetToken.java
+
+REPOSITORIES
+2. src/main/java/tn/esprit/piboursebackend/Player/Repositories/PasswordResetTokenRepository.java
+
+SERVICES
+3. src/main/java/tn/esprit/piboursebackend/Player/Services/PasswordResetService.java
+
+DTOs
+4. src/main/java/tn/esprit/piboursebackend/Player/DTOs/ForgotPasswordRequest.java
+5. src/main/java/tn/esprit/piboursebackend/Player/DTOs/ResetPasswordRequest.java
+6. src/main/java/tn/esprit/piboursebackend/Player/DTOs/ValidateTokenResponse.java
+
+========================================
+FICHIERS CRÉÉS - CONFIGURATION (3)
+========================================
+
+7. src/main/resources/application-test.properties
+   Configuration profil test (H2 en mémoire)
+
+8. src/main/resources/data-test.sql
+   Données de test SQL
+
+9. database-test-setup.sql
+   Script création base MySQL de test
+
+========================================
+FICHIERS CRÉÉS - TESTS (2)
+========================================
+
+10. test-swagger-fix.bat
+    Script test Windows
+
+11. test-swagger-fix.sh
+    Script test Linux/Mac
+
+========================================
+FICHIERS CRÉÉS - DOCUMENTATION (17)
+========================================
+
+FONCTIONNALITÉ MOT DE PASSE OUBLIÉ
+12. GUIDE_MOT_DE_PASSE_OUBLIE.md
+    Guide complet (300+ lignes)
+
+13. QUICK_START_PASSWORD_RESET.md
+    Démarrage rapide (2 minutes)
+
+14. RECAPITULATIF_PASSWORD_RESET.md
+    Résumé rapide
+
+15. API_EXAMPLES_PASSWORD_RESET.http
+    Exemples API prêts à tester
+
+16. TROUBLESHOOTING_PASSWORD_RESET.md
+    Guide de dépannage
+
+17. EMAIL_TEMPLATE_EXEMPLE.md
+    Templates email HTML
+
+18. README_PASSWORD_RESET_FEATURE.md
+    README principal
+
+19. CHANGEMENTS_APPORTES.md
+    Liste détaillée des changements
+
+FIX ERREUR 500 SWAGGER
+20. FIX_SWAGGER_500_ERROR.md
+    Correction complète erreur 500
+
+21. TEST_DATABASE_GUIDE.md
+    Guide base de données de test
+
+RÉCAPITULATIFS
+22. RECAP_FINAL_CORRECTIONS.md
+    Résumé des 2 problèmes résolus
+
+23. COMMANDES_TEST.md
+    Commandes à exécuter
+
+24. START_HERE.md ⭐
+    Point de départ (ultra-court)
+
+25. LISTE_FICHIERS_CREES.txt
+    Ce fichier
+
+========================================
+STATISTIQUES
+========================================
+
+Total fichiers modifiés : 4
+Total fichiers créés    : 25
+Total lignes de code    : ~600
+Total lignes de doc     : ~3000
+
+Code Java :
+- 6 nouvelles classes
+- 3 endpoints REST
+- 1 dépendance Maven
+
+Documentation :
+- 17 fichiers de documentation
+- 2 scripts de test
+- 3 fichiers de configuration
+
+========================================
+FONCTIONNALITÉS AJOUTÉES
+========================================
+
+✅ Mot de passe oublié (forgot password)
+✅ Envoi d'email automatique
+✅ Tokens de réinitialisation sécurisés
+✅ Validation de tokens
+✅ Réinitialisation de mot de passe
+✅ Configuration Swagger corrigée
+✅ Base de données de test (MySQL + H2)
+✅ Profil de test Spring
+✅ Documentation complète
+
+========================================
+PROCHAINES ÉTAPES
+========================================
+
+1. Ouvrir : START_HERE.md
+2. Exécuter : mvn spring-boot:run
+3. Tester : http://localhost:8084/swagger-ui.html
+
+========================================
+SUPPORT
+========================================
+
+Questions ? Consultez :
+- START_HERE.md (point de départ)
+- RECAP_FINAL_CORRECTIONS.md (résumé)
+- FIX_SWAGGER_500_ERROR.md (erreur 500)
+- COMMANDES_TEST.md (tests)
+
+========================================
+FIN
+========================================
+

@@ -5,6 +5,7 @@ package tn.esprit.piboursebackend.Player.Security.dto;
  */
 public class LoginRequest {
     private String username;
+    private String email;
     private String password;
 
     // Constructeurs
@@ -16,6 +17,11 @@ public class LoginRequest {
         this.password = password;
     }
 
+    public LoginRequest(String email, String password, boolean useEmail) {
+        this.email = email;
+        this.password = password;
+    }
+
     // Getters et Setters
     public String getUsername() {
         return username;
@@ -23,6 +29,14 @@ public class LoginRequest {
 
     public void setUsername(String username) {
         this.username = username;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public String getPassword() {

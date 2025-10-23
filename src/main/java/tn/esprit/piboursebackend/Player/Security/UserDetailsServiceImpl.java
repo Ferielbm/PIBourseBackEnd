@@ -19,16 +19,26 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     private PlayerRepository playerRepository;
 
     /**
-     * Charge un utilisateur par son username
-     * @param username le nom d'utilisateur
+     * Charge un utilisateur par son username ou email
+     * @param identifier le nom d'utilisateur ou l'email
      * @return UserDetails
      * @throws UsernameNotFoundException si l'utilisateur n'existe pas
      */
     @Override
     @Transactional
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        Player player = playerRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User Not Found with username: " + username));
+    public UserDetails loadUserByUsername(String identifier) throws UsernameNotFoundException {
+        Player player;
+        
+        // Essayer d'abord par email, puis par username
+        if (identifier.contains("@")) {
+            player = playerRepository.findByEmail(identifier);
+            if (player == null) {
+                throw new UsernameNotFoundException("User Not Found with email: " + identifier);
+            }
+        } else {
+            player = playerRepository.findByUsername(identifier)
+                    .orElseThrow(() -> new UsernameNotFoundException("User Not Found with username: " + identifier));
+        }
 
         return UserDetailsImpl.build(player);
     }

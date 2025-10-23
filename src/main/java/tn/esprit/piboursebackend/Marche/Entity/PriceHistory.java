@@ -2,6 +2,7 @@ package tn.esprit.piboursebackend.Marche.Entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -27,5 +28,6 @@ public class PriceHistory {
 
     @ManyToOne
     @JoinColumn(name = "stock_id")
+    @JsonIgnoreProperties({"priceHistoryList", "market", "hibernateLazyInitializer", "handler"})
     private Stock stock;
 }

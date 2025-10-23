@@ -20,7 +20,7 @@ public class PlayerDTO {
     private String username;
     private String email;
     private Role role;
-    @JsonIgnore
-    private List<TransactionDTO> transactions;
+
+
 }
 

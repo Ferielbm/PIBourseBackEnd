@@ -2,6 +2,7 @@ package tn.esprit.piboursebackend.Player.Entities;
 
 import jakarta.persistence.*;
 import lombok.*;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import java.math.BigDecimal;
 
 @Entity
@@ -21,9 +22,10 @@ public class Wallet {
     private BigDecimal totalDeposits = BigDecimal.ZERO; // Total des fonds reçus
     private BigDecimal totalWithdrawals = BigDecimal.ZERO; // Total des retraits
 
-    // ✅ Relation : chaque joueur possède un seul wallet
+    // ✅ Relation : chaque joueur possède un seul wallet 
     @OneToOne
     @JoinColumn(name = "player_id", nullable = false)
+    @JsonBackReference
     private Player player;
 
     // --- Méthodes utiles ---

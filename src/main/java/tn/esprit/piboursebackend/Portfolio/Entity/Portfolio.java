@@ -3,6 +3,7 @@ package tn.esprit.piboursebackend.Portfolio.Entity;
 import jakarta.persistence.*;
 import lombok.*;
 import tn.esprit.piboursebackend.Marche.Entity.Stock;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -30,9 +31,11 @@ public class Portfolio {
 */
 
     @OneToOne(optional = false, fetch = FetchType.LAZY)
+    @JsonIgnoreProperties({"priceHistoryList", "market", "hibernateLazyInitializer", "handler"})
     private Stock stock;
     // ✅ Correct: One portfolio can have many positions
     @OneToMany(mappedBy = "portfolio", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnoreProperties({"portfolio", "stock", "hibernateLazyInitializer", "handler"})
     private List<Position> positions = new ArrayList<>();
 
     public BigDecimal calculateTotalValue() {

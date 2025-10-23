@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import tn.esprit.piboursebackend.Portfolio.Entity.Portfolio;
 import tn.esprit.piboursebackend.Portfolio.Entity.Position;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -29,9 +30,11 @@ public class Stock {
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "market_id")
+    @JsonIgnoreProperties({"stocks", "hibernateLazyInitializer", "handler"})
     private Market market;
     
     @OneToMany(mappedBy = "stock", cascade = CascadeType.ALL)
+    @JsonIgnoreProperties({"stock", "hibernateLazyInitializer", "handler"})
     private List<PriceHistory> priceHistoryList = new ArrayList<>();
 
    /* @OneToOne(mappedBy = "stock", cascade = CascadeType.ALL)

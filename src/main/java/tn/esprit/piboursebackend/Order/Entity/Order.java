@@ -3,19 +3,18 @@ package tn.esprit.piboursebackend.Order.Entity;
 import jakarta.persistence.*;
 import lombok.*;
 import tn.esprit.piboursebackend.Marche.Entity.Stock;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
-import javax.sound.midi.Instrument;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 @Entity
-@Table(name = "`order`")  // Échapper "order" car c'est un mot réservé SQL
+@Table(name = "orders")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Table(name = "orders")
 public class Order {
 
  @Id
@@ -28,6 +27,7 @@ public class Order {
 
  @ManyToOne(optional = false, fetch = FetchType.LAZY)
  @JoinColumn(name = "stock_id", nullable = false)
+ @JsonIgnoreProperties({"priceHistoryList", "market", "hibernateLazyInitializer", "handler"})
  private Stock stock;
 
  @Enumerated(EnumType.STRING)

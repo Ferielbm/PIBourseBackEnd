@@ -2,6 +2,7 @@ package tn.esprit.piboursebackend.Marche.Entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -27,6 +28,7 @@ public class Market {
 
     @OneToMany(cascade = CascadeType.ALL)
     @JoinColumn(name = "market_id")
+    @JsonIgnoreProperties({"market", "priceHistoryList", "hibernateLazyInitializer", "handler"})
     private List<Stock> stocks = new ArrayList<>();
 
     public Long getId() {

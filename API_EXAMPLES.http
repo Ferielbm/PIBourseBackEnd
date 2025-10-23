@@ -1,4 +1,4 @@
-### PiBourse API - Player & Transaction Management
+### PiBourse API - Player Management
 ### Base URL: http://localhost:8084
 
 ### ========================================
@@ -62,65 +62,6 @@ Content-Type: application/json
 DELETE http://localhost:8084/api/players/5
 
 ### ========================================
-### TRANSACTION MANAGEMENT ENDPOINTS
-### ========================================
-
-### 9. Get All Transactions
-GET http://localhost:8084/api/transactions
-Accept: application/json
-
-### 10. Get Transaction by ID
-GET http://localhost:8084/api/transactions/1
-Accept: application/json
-
-### 11. Get Transactions by Player ID
-GET http://localhost:8084/api/transactions/player/1
-Accept: application/json
-
-### 12. Create DEPOSIT Transaction
-POST http://localhost:8084/api/transactions
-Content-Type: application/json
-
-{
-  "type": "DEPOSIT",
-  "amount": 5000.00,
-  "playerId": 1
-}
-
-### 13. Create BUY Transaction
-POST http://localhost:8084/api/transactions
-Content-Type: application/json
-
-{
-  "type": "BUY",
-  "amount": 1500.50,
-  "playerId": 2
-}
-
-### 14. Create SELL Transaction
-POST http://localhost:8084/api/transactions
-Content-Type: application/json
-
-{
-  "type": "SELL",
-  "amount": 2750.75,
-  "playerId": 3
-}
-
-### 15. Create WITHDRAW Transaction
-POST http://localhost:8084/api/transactions
-Content-Type: application/json
-
-{
-  "type": "WITHDRAW",
-  "amount": 1000.00,
-  "playerId": 1
-}
-
-### 16. Delete Transaction
-DELETE http://localhost:8084/api/transactions/10
-
-### ========================================
 ### ERROR SCENARIOS (for testing validation)
 ### ========================================
 
@@ -154,27 +95,7 @@ Content-Type: application/json
   "username": "test_user"
 }
 
-### 20. Negative Transaction Amount (should return 400)
-POST http://localhost:8084/api/transactions
-Content-Type: application/json
-
-{
-  "type": "DEPOSIT",
-  "amount": -1000.00,
-  "playerId": 1
-}
-
-### 21. Non-existent Player ID (should return 404)
-POST http://localhost:8084/api/transactions
-Content-Type: application/json
-
-{
-  "type": "DEPOSIT",
-  "amount": 1000.00,
-  "playerId": 9999
-}
-
-### 22. Get Non-existent Player (should return 404)
+### 20. Get Non-existent Player (should return 404)
 GET http://localhost:8084/api/players/9999
 Accept: application/json
 
@@ -193,62 +114,42 @@ Accept: application/json
 ### BULK OPERATIONS EXAMPLE
 ### ========================================
 
-### 25. Create Multiple Transactions for a Player
+### 21. Create Multiple Players
 
-# First create a player
+# Create Player 1
 POST http://localhost:8084/api/players
 Content-Type: application/json
 
 {
-  "username": "bulk_trader",
-  "email": "bulk@example.com",
+  "username": "trader1",
+  "email": "trader1@example.com",
   "password": "password123",
   "role": "ROLE_PLAYER"
 }
 
-### Then create multiple transactions (use the ID from response above)
-
-# Transaction 1
-POST http://localhost:8084/api/transactions
+### Create Player 2
+POST http://localhost:8084/api/players
 Content-Type: application/json
 
 {
-  "type": "DEPOSIT",
-  "amount": 10000.00,
-  "playerId": 5
+  "username": "trader2",
+  "email": "trader2@example.com",
+  "password": "password123",
+  "role": "ROLE_PLAYER"
 }
 
-### Transaction 2
-POST http://localhost:8084/api/transactions
+### Create Admin Player
+POST http://localhost:8084/api/players
 Content-Type: application/json
 
 {
-  "type": "BUY",
-  "amount": 3000.00,
-  "playerId": 5
+  "username": "admin_user",
+  "email": "admin@example.com",
+  "password": "admin123",
+  "role": "ROLE_ADMIN"
 }
 
-### Transaction 3
-POST http://localhost:8084/api/transactions
-Content-Type: application/json
-
-{
-  "type": "SELL",
-  "amount": 3500.00,
-  "playerId": 5
-}
-
-### Transaction 4
-POST http://localhost:8084/api/transactions
-Content-Type: application/json
-
-{
-  "type": "WITHDRAW",
-  "amount": 2000.00,
-  "playerId": 5
-}
-
-### Now get all transactions for this player
-GET http://localhost:8084/api/transactions/player/5
+### Get All Players
+GET http://localhost:8084/api/players
 Accept: application/json
 

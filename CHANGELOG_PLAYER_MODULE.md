@@ -1,4 +1,4 @@
-# Changelog - Module Player & Transaction Management
+# Changelog - Module Player Management
 
 ## [1.0.0] - 2025-10-21
 
@@ -12,13 +12,10 @@
 - Support des rôles (ROLE_ADMIN, ROLE_PLAYER)
 - Gestion des mots de passe (6 caractères minimum)
 
-#### 💰 Transaction Management
-- CRUD complet pour les transactions
-- Types de transactions : BUY, SELL, DEPOSIT, WITHDRAW
-- Association joueur-transactions (OneToMany)
-- Consultation des transactions par joueur
-- Horodatage automatique
-- Validation des montants (positifs uniquement)
+#### 💰 Wallet Management
+- Association joueur-wallet (OneToOne)
+- Gestion des portefeuilles
+- Suivi des soldes
 
 #### 🔧 Infrastructure
 - Configuration Swagger/OpenAPI complète
@@ -36,41 +33,33 @@
 - `Player/Config/SwaggerConfig.java` : Configuration OpenAPI
 - `Player/Config/DataInitializer.java` : Initialisation données test
 
-#### Controllers (2 fichiers)
+#### Controllers (1 fichier)
 - `Player/Controllers/PlayerController.java` : 6 endpoints REST
-- `Player/Controllers/TransactionController.java` : 5 endpoints REST
 
-#### DTOs (5 fichiers)
+#### DTOs (3 fichiers)
 - `Player/DTOs/PlayerDTO.java`
 - `Player/DTOs/PlayerCreateDTO.java`
 - `Player/DTOs/PlayerUpdateDTO.java`
-- `Player/DTOs/TransactionDTO.java`
-- `Player/DTOs/TransactionCreateDTO.java`
 
-#### Entities (4 fichiers)
+#### Entities (3 fichiers)
 - `Player/Entities/Player.java` : Amélioré avec Lombok
-- `Player/Entities/Transaction.java` : Amélioré avec Lombok
+- `Player/Entities/Wallet.java` : Nouveau
 - `Player/Entities/Role.java` : Existant
-- `Player/Entities/TransactionType.java` : Nouveau enum
 
 #### Exceptions (3 fichiers)
 - `Player/Exceptions/ResourceNotFoundException.java`
 - `Player/Exceptions/ErrorResponse.java`
 - `Player/Exceptions/GlobalExceptionHandler.java`
 
-#### Mappers (2 fichiers)
+#### Mappers (1 fichier)
 - `Player/Mappers/PlayerMapper.java`
-- `Player/Mappers/TransactionMapper.java`
 
-#### Repositories (2 fichiers)
+#### Repositories (1 fichier)
 - `Player/Repositories/PlayerRepository.java` : Amélioré
-- `Player/Repositories/TransactionRepository.java` : Amélioré
 
-#### Services (4 fichiers)
+#### Services (2 fichiers)
 - `Player/Services/IPlayerService.java` : Interface mise à jour
 - `Player/Services/PlayerService.java` : Implémentation complète
-- `Player/Services/ITransactionService.java` : Interface complète
-- `Player/Services/TransactionService.java` : Implémentation complète
 
 #### Documentation (4 fichiers)
 - `README_PLAYER_TRANSACTION.md` : Documentation complète
@@ -86,28 +75,26 @@
 
 #### Entities
 - `Player.java` : Ajout Lombok, validations, @JsonManagedReference
-- `Transaction.java` : Refactorisation complète avec enum, timestamp
+- `Wallet.java` : Nouvelle entité avec relation OneToOne
 
 #### Repositories
 - `PlayerRepository.java` : Ajout findByEmail, existsByEmail
-- `TransactionRepository.java` : Ajout findByPlayerId
 
 #### Services
 - `PlayerService.java` : Refactorisation complète avec DTOs
-- `TransactionService.java` : Refactorisation complète avec DTOs
 
 #### Controllers
 - `PlayerController.java` : Refactorisation complète avec Swagger
 
 ### 📊 Statistiques
 
-- **Total fichiers créés** : 28
-- **Total fichiers modifiés** : 8
-- **Lignes de code ajoutées** : ~2500+
-- **Endpoints API** : 11
-- **DTOs** : 5
-- **Entities** : 4
-- **Services** : 2
+- **Total fichiers créés** : 20
+- **Total fichiers modifiés** : 6
+- **Lignes de code ajoutées** : ~1500+
+- **Endpoints API** : 6
+- **DTOs** : 3
+- **Entities** : 3
+- **Services** : 1
 - **Exceptions personnalisées** : 3
 
 ### 🎯 Endpoints API
@@ -120,13 +107,6 @@
 5. `PUT /api/players/{id}` - Mettre à jour un joueur
 6. `DELETE /api/players/{id}` - Supprimer un joueur
 
-#### Transaction Management (5 endpoints)
-1. `GET /api/transactions` - Liste toutes les transactions
-2. `GET /api/transactions/{id}` - Transaction par ID
-3. `GET /api/transactions/player/{playerId}` - Transactions d'un joueur
-4. `POST /api/transactions` - Créer une transaction
-5. `DELETE /api/transactions/{id}` - Supprimer une transaction
-
 ### ✅ Validations Implémentées
 
 #### PlayerCreateDTO
@@ -135,10 +115,6 @@
 - `password` : minimum 6 caractères, obligatoire
 - `role` : ROLE_ADMIN ou ROLE_PLAYER, obligatoire
 
-#### TransactionCreateDTO
-- `type` : BUY, SELL, DEPOSIT, ou WITHDRAW, obligatoire
-- `amount` : nombre positif, obligatoire
-- `playerId` : doit exister, obligatoire
 
 ### 🔐 Sécurité
 
@@ -173,11 +149,10 @@
 - Emails et usernames uniques
 - Mots de passe définis
 
-#### Transactions (10)
-- Réparties sur 3 joueurs
-- 4 types différents
-- Montants variés
-- Horodatage automatique
+#### Wallets (4)
+- Un wallet par joueur
+- Soldes initiaux
+- Association OneToOne
 
 ### 🚀 Technologies Utilisées
 
@@ -226,8 +201,8 @@
 
 ✅ Projet structuré avec packages (entities, repositories, services, controllers)
 ✅ Swagger UI activé pour tester toutes les routes
-✅ CRUD complet pour Player et Transaction
-✅ Relation OneToMany entre Player et Transaction
+✅ CRUD complet pour Player
+✅ Relation OneToOne entre Player et Wallet
 ✅ Endpoints REST clairs et documentés avec @Operation
 ✅ Validations avec @Valid
 ✅ Exceptions gérées proprement (@ControllerAdvice)
@@ -236,6 +211,6 @@
 
 ---
 
-**Version 1.0.0 - Module Player & Transaction Management**
+**Version 1.0.0 - Module Player Management**
 *Créé le 21 octobre 2025*
 

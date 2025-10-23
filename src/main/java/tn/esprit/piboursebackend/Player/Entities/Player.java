@@ -41,17 +41,13 @@ public class Player {
     @Column(nullable = false)
     private Role role;
 
-    @OneToMany(mappedBy = "player", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonManagedReference
-    @Builder.Default
-    private List<Transaction> transactions = new ArrayList<>();
-
     @OneToOne(mappedBy = "player", cascade = CascadeType.ALL)
+    @JsonManagedReference
     private Wallet wallet;
 
     // Getters et setters
     public Long getId() { return id; }
-    public void setId(Long id) { this.id = id; }
+    public void setId(Long id) { this.id = id; } 
 
     public String getUsername() { return username; }
     public void setUsername(String username) { this.username = username; }
