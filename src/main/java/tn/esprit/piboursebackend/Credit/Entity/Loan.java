@@ -1,6 +1,8 @@
 package tn.esprit.piboursebackend.Credit.Entity;
+
 import jakarta.persistence.*;
 import lombok.*;
+import tn.esprit.piboursebackend.Player.Entities.Player;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -12,53 +14,89 @@ import java.time.LocalDate;
 @AllArgsConstructor
 @Builder
 public class Loan {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long loanId;
 
     private BigDecimal amount;
-    private double interestRate;
-    private int durationMonths;
+
+    public Long getLoanId() {
+        return loanId;
+    }
+
+    public void setLoanId(Long loanId) {
+        this.loanId = loanId;
+    }
+
+    public BigDecimal getAmount() {
+        return amount;
+    }
+
+    public void setAmount(BigDecimal amount) {
+        this.amount = amount;
+    }
+
+    public LocalDate getStartDate() {
+        return startDate;
+    }
+
+    public void setStartDate(LocalDate startDate) {
+        this.startDate = startDate;
+    }
+
+    public LoanStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(LoanStatus status) {
+        this.status = status;
+    }
+
+    public double getLoanRiskScore() {
+        return loanRiskScore;
+    }
+
+    public void setLoanRiskScore(double loanRiskScore) {
+        this.loanRiskScore = loanRiskScore;
+    }
+
+    public BigDecimal getRemainingAmount() {
+        return remainingAmount;
+    }
+
+    public void setRemainingAmount(BigDecimal remainingAmount) {
+        this.remainingAmount = remainingAmount;
+    }
+
+    public LocalDate getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(LocalDate endDate) {
+        this.endDate = endDate;
+    }
+
+    public Player getPlayer() {
+        return player;
+    }
+
+    public void setPlayer(Player player) {
+        this.player = player;
+    }
+
     private LocalDate startDate;
-    private LocalDate dueDate;
-    private LocalDate repaymentDate;
-
-    private BigDecimal totalToRepay;
-    private String status; // PENDING, APPROVED, REPAID, LATE, REJECTED
-
-    private int delayDays;
-    private BigDecimal penaltyAmount;
+    private LoanStatus status;
     private double loanRiskScore;
+    private BigDecimal remainingAmount; // Montant restant à rembourser
+    private LocalDate endDate; // optionnel, juste pour historique
 
-    // 🔗 Relation : un prêt appartient à un joueur
-    /*@ManyToOne(fetch = FetchType.LAZY)
+
+    // 🔗 Relation : un prêt appartient à un joueur (désactivée pour l’instant)
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "player_id", nullable = false)
-    private Player player;*/
+    private Player player;
 
-    // --- Méthodes métier ---
-    public BigDecimal calculateTotalToRepay() {
-        return amount.add(amount.multiply(BigDecimal.valueOf(interestRate / 100)));
-    }
 
-    public BigDecimal calculatePenalty() {
-        if (delayDays > 0) {
-            penaltyAmount = amount.multiply(BigDecimal.valueOf(0.01 * delayDays)); // 1% par jour de retard
-        } else {
-            penaltyAmount = BigDecimal.ZERO;
-        }
-        return penaltyAmount;
-    }
-
-    public boolean checkIfLate() {
-        if (repaymentDate != null && repaymentDate.isAfter(dueDate)) {
-            delayDays = (int) java.time.temporal.ChronoUnit.DAYS.between(dueDate, repaymentDate);
-            status = "LATE";
-            return true;
-        }
-        return false;
-    }
-
-    public void updateStatus(String newStatus) {
-        this.status = newStatus;
-    }
 }

@@ -1,6 +1,10 @@
 package tn.esprit.piboursebackend.Player.Entities;
 
 import jakarta.persistence.*;
+import tn.esprit.piboursebackend.Credit.Entity.Loan;
+import tn.esprit.piboursebackend.Portfolio.Entity.Portfolio;
+
+import java.util.ArrayList;
 import java.util.List;
 
 @Entity
@@ -14,12 +18,47 @@ public class Player {
     private String email;
     private String password;
 
-
+    private int totalCreditsTaken = 0;
     @Enumerated(EnumType.STRING)
     private Role role;
 
+    @OneToOne(mappedBy = "player", cascade = CascadeType.ALL)
+    private Wallet wallet;
+
+    public Wallet getWallet() {
+        return wallet;
+    }
+
+    public void setWallet(Wallet wallet) {
+        this.wallet = wallet;
+    }
+
+
     @OneToMany(mappedBy = "player", cascade = CascadeType.ALL)
     private List<Transaction> transactions;
+
+    public List<Portfolio> getPortfolios() {
+        return portfolios;
+    }
+
+    public void setPortfolios(List<Portfolio> portfolios) {
+        this.portfolios = portfolios;
+    }
+
+    // 🔗 Un joueur peut avoir plusieurs portefeuilles
+    @OneToMany(mappedBy = "player", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Portfolio> portfolios = new ArrayList<>();
+
+    // 🔗 Un joueur peut avoir plusieurs prêts
+    @OneToMany(mappedBy = "player", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Loan> loans = new ArrayList<>();
+    public List<Loan> getLoans() {
+        return loans;
+    }
+
+    public void setLoans(List<Loan> loans) {
+        this.loans = loans;
+    }
 
     // Getters et setters
     public Long getId() { return id; }

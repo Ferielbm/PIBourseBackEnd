@@ -3,6 +3,7 @@ package tn.esprit.piboursebackend.Portfolio.Entity;
 import jakarta.persistence.*;
 import lombok.*;
 import tn.esprit.piboursebackend.Marche.Entity.Stock;
+import tn.esprit.piboursebackend.Player.Entities.Player;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -24,10 +25,10 @@ public class Portfolio {
     private BigDecimal realizedPnL;
 
     // ✅ Correct: a Portfolio belongs to ONE Player
- /*   @ManyToOne
+    @ManyToOne
     @JoinColumn(name = "player_id", nullable = false)
     private Player player;
-*/
+
 
     @OneToOne(optional = false, fetch = FetchType.LAZY)
     private Stock stock;
