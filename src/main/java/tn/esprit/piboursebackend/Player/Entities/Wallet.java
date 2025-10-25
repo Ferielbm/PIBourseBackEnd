@@ -1,5 +1,6 @@
 package tn.esprit.piboursebackend.Player.Entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
@@ -24,6 +25,7 @@ public class Wallet {
     // ✅ Relation : chaque joueur possède un seul wallet
     @OneToOne
     @JoinColumn(name = "player_id", nullable = false)
+    @JsonIgnore
     private Player player;
 
     // --- Méthodes utiles ---

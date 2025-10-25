@@ -30,8 +30,9 @@ public class Portfolio {
     private Player player;
 
 
-    @OneToOne(optional = false, fetch = FetchType.LAZY)
-    private Stock stock;
+    //@OneToOne(optional = false, fetch = FetchType.LAZY)
+    //private Stock stock;
+
     // ✅ Correct: One portfolio can have many positions
     @OneToMany(mappedBy = "portfolio", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Position> positions = new ArrayList<>();

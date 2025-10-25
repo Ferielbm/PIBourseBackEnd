@@ -1,5 +1,6 @@
 package tn.esprit.piboursebackend.Credit.Entity;
 
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -27,16 +28,19 @@ import java.util.List;
         }
 
         // 📜 Récupérer tous les prêts
-       /* @GetMapping("/all")
+       @GetMapping("/all")
         public List<Loan> getAllLoans() {
             return loanService.getAllLoans();
         }
 
-        // 🔍 Récupérer les prêts d’un joueur
+
         @GetMapping("/player/{playerId}")
         public List<Loan> getLoansByPlayer(@PathVariable Long playerId) {
             return loanService.getLoansByPlayer(playerId);
-        }*/
+        }
+
+
+
 
 
 }

@@ -13,4 +13,6 @@ public interface LoanRepository extends JpaRepository<Loan, Long> {
     // Compte le nombre de crédits d’un joueur selon un statut (ex : REPAID, ACTIVE, DEFAULTED)
     int countByPlayerAndStatus(Player player, LoanStatus status);
     Loan findByPlayerAndStatus(Player player, LoanStatus status);
+
+    List<Loan> findByPlayer_Id(Long playerId);
 }

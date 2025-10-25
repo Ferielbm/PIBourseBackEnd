@@ -9,6 +9,7 @@ import tn.esprit.piboursebackend.Player.Repositories.WalletRepository;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.List;
 
 @Service
 public class LoanService {
@@ -19,6 +20,9 @@ public class LoanService {
     @Autowired
     private CreditManager creditManager;
     private WalletRepository walletRepository;
+    private PlayerRepository playerRepository;
+    @Autowired
+    private NotificationService notificationService;
 
 
     public Loan createLoan(Long playerId, BigDecimal amount) {
@@ -27,36 +31,49 @@ public class LoanService {
     }
     public void autoRepayLoan(Player player, BigDecimal gain) {
 
-        // 1️⃣ Trouver le prêt actif
         Loan activeLoan = loanRepository.findByPlayerAndStatus(player, LoanStatus.APPROVED);
 
         if (activeLoan != null) {
             BigDecimal remaining = activeLoan.getRemainingAmount();
 
-            // 2️⃣ Appliquer le gain pour rembourser le prêt
             if (gain.compareTo(remaining) >= 0) {
-                // Gain suffit pour tout rembourser
                 BigDecimal excess = gain.subtract(remaining);
                 activeLoan.setRemainingAmount(BigDecimal.ZERO);
                 activeLoan.setStatus(LoanStatus.REPAID);
 
-                // Le reste du gain va au wallet du joueur
                 Wallet wallet = player.getWallet();
                 wallet.setBalance(wallet.getBalance().add(excess));
                 walletRepository.save(wallet);
+                loanRepository.save(activeLoan);
+
+                // ✅ Notifier l’utilisateur
+                notificationService.notifyLoanFullyRepaid(player, activeLoan);
 
             } else {
-                // Gain partiel → on diminue juste le reste du crédit
                 activeLoan.setRemainingAmount(remaining.subtract(gain));
+                loanRepository.save(activeLoan);
+
+                // ✅ Notifier remboursement partiel
+                notificationService.notifyLoanPartialRepay(player, activeLoan, activeLoan.getRemainingAmount());
             }
 
-            loanRepository.save(activeLoan);
         } else {
-            // Aucun prêt actif → gain va directement dans le wallet
             Wallet wallet = player.getWallet();
             wallet.setBalance(wallet.getBalance().add(gain));
             walletRepository.save(wallet);
+
+            // ✅ Notifier gain direct
+            notificationService.notifyGainAdded(player, gain);
         }
     }
 
+    public List<Loan> getAllLoans() {
+        return loanRepository.findAll();
+    }
+
+    // 🔍 Récupérer les prêts d’un joueur
+
+    public List<Loan> getLoansByPlayer(Long playerId) {
+        return loanRepository.findByPlayer_Id(playerId);
+    }
 }

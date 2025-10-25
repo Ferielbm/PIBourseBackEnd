@@ -18,6 +18,14 @@ public class Player {
     private String email;
     private String password;
 
+    public int getTotalCreditsTaken() {
+        return totalCreditsTaken;
+    }
+
+    public void setTotalCreditsTaken(int totalCreditsTaken) {
+        this.totalCreditsTaken = totalCreditsTaken;
+    }
+
     private int totalCreditsTaken = 0;
     @Enumerated(EnumType.STRING)
     private Role role;

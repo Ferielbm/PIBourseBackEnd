@@ -43,7 +43,7 @@ public class CreditManager {
         }
 
         // b. S’il a déjà eu 3 crédits au total → refuser
-        if (playerLoans.size() >= 3) {
+        if (player.getTotalCreditsTaken() >= 3) {
             throw new RuntimeException("Limite maximale de 3 crédits atteinte !");
         }
 
@@ -59,7 +59,7 @@ public class CreditManager {
         loan.setLoanRiskScore(riskScore);
 
         // 5️⃣ Décision d’approbation automatique
-        if (riskScore > 0.7) {
+        if (riskScore >= 0.7) {
             loan.setStatus(LoanStatus.REJECTED);
         } else {
             loan.setStatus(LoanStatus.APPROVED);
@@ -70,8 +70,12 @@ public class CreditManager {
             walletRepository.save(wallet);
         }
 
+        player.setTotalCreditsTaken(player.getTotalCreditsTaken() + 1);
+        playerRepository.save(player);
         // 6️⃣ Sauvegarde du prêt
         return loanRepository.save(loan);
+
+
     }
 
 
