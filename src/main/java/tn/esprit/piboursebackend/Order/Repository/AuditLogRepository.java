@@ -5,5 +5,4 @@ import org.springframework.stereotype.Repository;
 import tn.esprit.piboursebackend.Order.Entity.AuditLog;
 
 @Repository
-public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
-}
+public interface AuditLogRepository extends JpaRepository<AuditLog, Long> { }

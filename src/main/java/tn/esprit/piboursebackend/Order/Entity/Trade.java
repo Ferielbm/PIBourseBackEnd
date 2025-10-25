@@ -8,14 +8,14 @@ import tn.esprit.piboursebackend.Marche.Entity.Stock;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
+
 @Entity
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@Table(name = "trades",
+        indexes = { @Index(name = "idx_trade_stock_time", columnList = "stock_id,executedAt") })
 public class Trade {
 
-    private static final int SCALE = 6;
-
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Version
@@ -44,8 +44,8 @@ public class Trade {
     private LocalDateTime executedAt;
 
     @PrePersist
-    public void onPersist() {
-        if (price != null)    price    = price.setScale(SCALE, RoundingMode.HALF_UP);
-        if (quantity != null) quantity = quantity.setScale(SCALE, RoundingMode.HALF_UP);
+    void normalize() {
+        if (price != null)    price    = price.setScale(6, RoundingMode.HALF_UP);
+        if (quantity != null) quantity = quantity.setScale(6, RoundingMode.HALF_UP);
     }
 }

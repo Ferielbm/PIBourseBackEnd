@@ -1,8 +1,8 @@
 package tn.esprit.piboursebackend.Marche.Entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -14,56 +14,39 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Table(name = "markets")
 public class Market {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private LocalDateTime currentDate;    // Date courante simulée
-    private Boolean isOpen;               // Marché ouvert/fermé
-    private BigDecimal timeCompressionRatio;  // Ex: 1h réelle = 1 semaine simulée
+    @Column(unique = true, nullable = false)
+    private String code; // NASDAQ, NYSE
 
-    @OneToMany(cascade = CascadeType.ALL)
-    @JoinColumn(name = "market_id")
+    @Column(nullable = false)
+    private String name;
+
+    @Column(name = "current_market_date")
+    private LocalDateTime currentDate;
+
+    @Column(name = "is_open")
+    private Boolean isOpen;
+
+    @Column(name = "time_compression_ratio", precision = 10, scale = 2)
+    private BigDecimal timeCompressionRatio;
+
+    @OneToMany(mappedBy = "market", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonIgnore
     private List<Stock> stocks = new ArrayList<>();
 
-    public Long getId() {
-        return id;
-    }
+    @Column(name = "created_at")
+    private LocalDateTime createdAt = LocalDateTime.now();
 
-    public void setId(Long id) {
-        this.id = id;
-    }
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt = LocalDateTime.now();
 
-    public LocalDateTime getCurrentDate() {
-        return currentDate;
-    }
-
-    public void setCurrentDate(LocalDateTime currentDate) {
-        this.currentDate = currentDate;
-    }
-
-    public Boolean getOpen() {
-        return isOpen;
-    }
-
-    public void setOpen(Boolean open) {
-        isOpen = open;
-    }
-
-    public BigDecimal getTimeCompressionRatio() {
-        return timeCompressionRatio;
-    }
-
-    public void setTimeCompressionRatio(BigDecimal timeCompressionRatio) {
-        this.timeCompressionRatio = timeCompressionRatio;
-    }
-
-    public List<Stock> getStocks() {
-        return stocks;
-    }
-
-    public void setStocks(List<Stock> stocks) {
-        this.stocks = stocks;
+    @PreUpdate
+    public void preUpdate() {
+        this.updatedAt = LocalDateTime.now();
     }
 }
