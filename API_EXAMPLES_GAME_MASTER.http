@@ -1,0 +1,579 @@
+### ============================================================
+### MODULE GAME MASTER - TESTS API
+### ============================================================
+### Guide complet pour tester toutes les fonctionnalités du module Game Master
+### Base URL: http://localhost:8084
+### ============================================================
+
+### Variables globales
+@baseUrl = http://localhost:8084
+@gameMasterToken = YOUR_GAME_MASTER_TOKEN_HERE
+@playerToken = YOUR_PLAYER_TOKEN_HERE
+@sessionId = 1
+@playerId = 2
+
+### ============================================================
+### 📝 ÉTAPE 0 : AUTHENTIFICATION
+### ============================================================
+
+### 0.1 - Connexion en tant que Game Master
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "gamemaster@example.com",
+  "password": "Password123!"
+}
+
+### Réponse attendue : 
+### {
+###   "token": "eyJhbGciOiJIUzUxMiJ9...",
+###   "type": "Bearer",
+###   "id": 1,
+###   "username": "GameMaster1",
+###   "email": "gamemaster@example.com",
+###   "role": "ROLE_GAME_MASTER"
+### }
+### 
+### ⚠️ Copiez le token reçu et remplacez YOUR_GAME_MASTER_TOKEN_HERE ci-dessus
+
+###
+
+### 0.2 - Connexion en tant que Joueur (pour tester les permissions)
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "username": "player@example.com",
+  "password": "Password123!"
+}
+
+### ⚠️ Copiez le token reçu et remplacez YOUR_PLAYER_TOKEN_HERE ci-dessus
+
+###
+
+### ============================================================
+### 🎮 SECTION 1 : GESTION DES SESSIONS
+### ============================================================
+
+### 1.1 - Créer une nouvelle session
+POST {{baseUrl}}/api/game-master/sessions
+Authorization: Bearer {{gameMasterToken}}
+Content-Type: application/json
+
+{
+  "name": "Compétition Bourse Hiver 2025",
+  "description": "Session de trading compétitive pour joueurs avancés",
+  "initialBalance": 10000.00,
+  "currency": "USD",
+  "startDate": "2025-11-10T09:00:00",
+  "endDate": "2025-11-17T18:00:00",
+  "maxPlayers": 10,
+  "allowLateJoin": false
+}
+
+### Réponse attendue : 201 Created
+### ⚠️ Notez l'ID de la session créée et mettez-le dans @sessionId
+
+###
+
+### 1.2 - Récupérer une session par ID
+GET {{baseUrl}}/api/game-master/sessions/{{sessionId}}
+Authorization: Bearer {{gameMasterToken}}
+
+### Réponse attendue : 200 OK
+
+###
+
+### 1.3 - Récupérer toutes mes sessions
+GET {{baseUrl}}/api/game-master/my-sessions
+Authorization: Bearer {{gameMasterToken}}
+
+### Réponse attendue : 200 OK avec tableau de sessions
+
+###
+
+### 1.4 - Récupérer les sessions actives
+GET {{baseUrl}}/api/game-master/sessions/active
+Authorization: Bearer {{gameMasterToken}}
+
+### Réponse attendue : 200 OK
+
+###
+
+### 1.5 - Récupérer les sessions à venir
+GET {{baseUrl}}/api/game-master/sessions/upcoming
+Authorization: Bearer {{gameMasterToken}}
+
+### Réponse attendue : 200 OK
+
+###
+
+### 1.6 - Modifier une session (avant démarrage)
+PUT {{baseUrl}}/api/game-master/sessions/{{sessionId}}
+Authorization: Bearer {{gameMasterToken}}
+Content-Type: application/json
+
+{
+  "name": "Compétition Bourse Hiver 2025 - Modifiée",
+  "description": "Description mise à jour",
+  "maxPlayers": 15
+}
+
+### Réponse attendue : 200 OK
+
+###
+
+### ============================================================
+### 👥 SECTION 2 : GESTION DES JOUEURS
+### ============================================================
+
+### 2.1 - Ajouter un joueur à la session
+POST {{baseUrl}}/api/game-master/sessions/{{sessionId}}/players
+Authorization: Bearer {{gameMasterToken}}
+Content-Type: application/json
+
+{
+  "playerId": {{playerId}}
+}
+
+### Réponse attendue : 201 Created
+
+###
+
+### 2.2 - Ajouter un second joueur
+POST {{baseUrl}}/api/game-master/sessions/{{sessionId}}/players
+Authorization: Bearer {{gameMasterToken}}
+Content-Type: application/json
+
+{
+  "playerId": 3
+}
+
+###
+
+### 2.3 - Récupérer la liste des joueurs dans la session
+GET {{baseUrl}}/api/game-master/sessions/{{sessionId}}/players
+Authorization: Bearer {{gameMasterToken}}
+
+### Réponse attendue : 200 OK avec liste des joueurs
+
+###
+
+### 2.4 - Retirer un joueur de la session (avant démarrage)
+DELETE {{baseUrl}}/api/game-master/sessions/{{sessionId}}/players/3
+Authorization: Bearer {{gameMasterToken}}
+
+### Réponse attendue : 200 OK
+
+###
+
+### 2.5 - Tenter d'ajouter un joueur déjà dans la session (devrait échouer)
+POST {{baseUrl}}/api/game-master/sessions/{{sessionId}}/players
+Authorization: Bearer {{gameMasterToken}}
+Content-Type: application/json
+
+{
+  "playerId": {{playerId}}
+}
+
+### Réponse attendue : 400 Bad Request
+### Message : "Le joueur est déjà dans cette session"
+
+###
+
+### ============================================================
+### 🎯 SECTION 3 : CONTRÔLE DE SESSION
+### ============================================================
+
+### 3.1 - Démarrer la session
+POST {{baseUrl}}/api/game-master/sessions/{{sessionId}}/start
+Authorization: Bearer {{gameMasterToken}}
+
+### Réponse attendue : 200 OK
+### Status change : CREATED → ACTIVE
+
+###
+
+### 3.2 - Tenter d'ajouter un joueur après le démarrage (devrait échouer si allowLateJoin=false)
+POST {{baseUrl}}/api/game-master/sessions/{{sessionId}}/players
+Authorization: Bearer {{gameMasterToken}}
+Content-Type: application/json
+
+{
+  "playerId": 4
+}
+
+### Réponse attendue : 400 Bad Request
+### Message : "Impossible d'ajouter des joueurs à cette session"
+
+###
+
+### 3.3 - Mettre la session en pause
+POST {{baseUrl}}/api/game-master/sessions/{{sessionId}}/pause
+Authorization: Bearer {{gameMasterToken}}
+
+### Réponse attendue : 200 OK
+### Status change : ACTIVE → PAUSED
+
+###
+
+### 3.4 - Reprendre la session
+POST {{baseUrl}}/api/game-master/sessions/{{sessionId}}/resume
+Authorization: Bearer {{gameMasterToken}}
+
+### Réponse attendue : 200 OK
+### Status change : PAUSED → ACTIVE
+
+###
+
+### 3.5 - Terminer la session
+POST {{baseUrl}}/api/game-master/sessions/{{sessionId}}/complete
+Authorization: Bearer {{gameMasterToken}}
+
+### Réponse attendue : 200 OK
+### Status change : ACTIVE → COMPLETED
+
+###
+
+### 3.6 - Tenter de modifier une session terminée (devrait échouer)
+PUT {{baseUrl}}/api/game-master/sessions/{{sessionId}}
+Authorization: Bearer {{gameMasterToken}}
+Content-Type: application/json
+
+{
+  "name": "Tentative de modification"
+}
+
+### Réponse attendue : 400 Bad Request
+
+###
+
+### ============================================================
+### 📊 SECTION 4 : STATISTIQUES ET CLASSEMENTS
+### ============================================================
+
+### 4.1 - Récupérer le classement de la session
+GET {{baseUrl}}/api/game-master/sessions/{{sessionId}}/leaderboard
+Authorization: Bearer {{gameMasterToken}}
+
+### Réponse attendue : 200 OK avec classement des joueurs
+
+###
+
+### 4.2 - Mettre à jour les classements manuellement
+POST {{baseUrl}}/api/game-master/sessions/{{sessionId}}/update-rankings
+Authorization: Bearer {{gameMasterToken}}
+
+### Réponse attendue : 200 OK
+
+###
+
+### 4.3 - Consulter la performance d'un joueur spécifique
+GET {{baseUrl}}/api/game-master/sessions/{{sessionId}}/players/{{playerId}}/performance
+Authorization: Bearer {{gameMasterToken}}
+
+### Réponse attendue : 200 OK avec statistiques détaillées
+
+###
+
+### 4.4 - Consulter l'historique complet d'un joueur
+GET {{baseUrl}}/api/game-master/players/{{playerId}}/history
+Authorization: Bearer {{gameMasterToken}}
+
+### Réponse attendue : 200 OK avec liste de toutes les sessions du joueur
+
+###
+
+### ============================================================
+### 🚫 SECTION 5 : TESTS DE SÉCURITÉ
+### ============================================================
+
+### 5.1 - Tenter de créer une session sans authentification
+POST {{baseUrl}}/api/game-master/sessions
+Content-Type: application/json
+
+{
+  "name": "Session Non Autorisée",
+  "initialBalance": 10000.00,
+  "startDate": "2025-11-10T09:00:00",
+  "endDate": "2025-11-17T18:00:00"
+}
+
+### Réponse attendue : 401 Unauthorized
+
+###
+
+### 5.2 - Tenter de créer une session avec un rôle PLAYER
+POST {{baseUrl}}/api/game-master/sessions
+Authorization: Bearer {{playerToken}}
+Content-Type: application/json
+
+{
+  "name": "Session par Joueur",
+  "initialBalance": 10000.00,
+  "startDate": "2025-11-10T09:00:00",
+  "endDate": "2025-11-17T18:00:00"
+}
+
+### Réponse attendue : 403 Forbidden
+
+###
+
+### 5.3 - Tenter de modifier une session créée par un autre Game Master
+### (Créez d'abord une session avec un autre GM, puis tentez de la modifier)
+PUT {{baseUrl}}/api/game-master/sessions/999
+Authorization: Bearer {{gameMasterToken}}
+Content-Type: application/json
+
+{
+  "name": "Tentative de piratage"
+}
+
+### Réponse attendue : 400 Bad Request ou 403 Forbidden
+### Message : "Seul le Game Master de cette session peut effectuer cette opération"
+
+###
+
+### ============================================================
+### ✅ SECTION 6 : VALIDATION DES DONNÉES
+### ============================================================
+
+### 6.1 - Créer une session avec des données invalides (nom trop court)
+POST {{baseUrl}}/api/game-master/sessions
+Authorization: Bearer {{gameMasterToken}}
+Content-Type: application/json
+
+{
+  "name": "Ab",
+  "initialBalance": 10000.00,
+  "startDate": "2025-11-10T09:00:00",
+  "endDate": "2025-11-17T18:00:00"
+}
+
+### Réponse attendue : 400 Bad Request
+
+###
+
+### 6.2 - Créer une session avec solde initial négatif
+POST {{baseUrl}}/api/game-master/sessions
+Authorization: Bearer {{gameMasterToken}}
+Content-Type: application/json
+
+{
+  "name": "Session Invalide",
+  "initialBalance": -5000.00,
+  "startDate": "2025-11-10T09:00:00",
+  "endDate": "2025-11-17T18:00:00"
+}
+
+### Réponse attendue : 400 Bad Request
+
+###
+
+### 6.3 - Créer une session avec date de fin avant date de début
+POST {{baseUrl}}/api/game-master/sessions
+Authorization: Bearer {{gameMasterToken}}
+Content-Type: application/json
+
+{
+  "name": "Session Dates Invalides",
+  "initialBalance": 10000.00,
+  "startDate": "2025-11-17T18:00:00",
+  "endDate": "2025-11-10T09:00:00"
+}
+
+### Réponse attendue : 400 Bad Request
+### Message : "La date de fin doit être après la date de début"
+
+###
+
+### ============================================================
+### 🗑️ SECTION 7 : SUPPRESSION
+### ============================================================
+
+### 7.1 - Créer une session temporaire pour test de suppression
+POST {{baseUrl}}/api/game-master/sessions
+Authorization: Bearer {{gameMasterToken}}
+Content-Type: application/json
+
+{
+  "name": "Session Temporaire",
+  "description": "À supprimer",
+  "initialBalance": 5000.00,
+  "currency": "USD",
+  "startDate": "2025-12-01T09:00:00",
+  "endDate": "2025-12-07T18:00:00",
+  "maxPlayers": 5,
+  "allowLateJoin": false
+}
+
+### ⚠️ Notez l'ID de cette session
+
+###
+
+### 7.2 - Supprimer la session (avant démarrage)
+DELETE {{baseUrl}}/api/game-master/sessions/TEMP_SESSION_ID
+Authorization: Bearer {{gameMasterToken}}
+
+### Réponse attendue : 200 OK
+### Message : "Session supprimée avec succès"
+
+###
+
+### 7.3 - Tenter de supprimer une session déjà démarrée (devrait échouer)
+DELETE {{baseUrl}}/api/game-master/sessions/{{sessionId}}
+Authorization: Bearer {{gameMasterToken}}
+
+### Réponse attendue : 400 Bad Request
+### Message : "Impossible de supprimer une session déjà démarrée"
+
+###
+
+### ============================================================
+### 🔄 SECTION 8 : ANNULATION DE SESSION
+### ============================================================
+
+### 8.1 - Créer une session à annuler
+POST {{baseUrl}}/api/game-master/sessions
+Authorization: Bearer {{gameMasterToken}}
+Content-Type: application/json
+
+{
+  "name": "Session à Annuler",
+  "description": "Test d'annulation",
+  "initialBalance": 10000.00,
+  "currency": "USD",
+  "startDate": "2025-12-10T09:00:00",
+  "endDate": "2025-12-17T18:00:00"
+}
+
+### ⚠️ Notez l'ID
+
+###
+
+### 8.2 - Annuler la session
+POST {{baseUrl}}/api/game-master/sessions/CANCEL_SESSION_ID/cancel
+Authorization: Bearer {{gameMasterToken}}
+
+### Réponse attendue : 200 OK
+### Status : CANCELLED
+
+###
+
+### ============================================================
+### 📋 SECTION 9 : SCÉNARIO COMPLET
+### ============================================================
+### Ce scénario teste le workflow complet d'une session de jeu
+
+### 9.1 - Créer une session complète
+POST {{baseUrl}}/api/game-master/sessions
+Authorization: Bearer {{gameMasterToken}}
+Content-Type: application/json
+
+{
+  "name": "🎮 Championnat Trading Automne 2025",
+  "description": "Compétition de trading avec prix pour le top 3",
+  "initialBalance": 50000.00,
+  "currency": "USD",
+  "startDate": "2025-11-20T09:00:00",
+  "endDate": "2025-11-27T18:00:00",
+  "maxPlayers": 20,
+  "allowLateJoin": true
+}
+
+### Réponse : Notez l'ID dans @sessionId
+
+###
+
+### 9.2 - Ajouter plusieurs joueurs
+POST {{baseUrl}}/api/game-master/sessions/{{sessionId}}/players
+Authorization: Bearer {{gameMasterToken}}
+Content-Type: application/json
+
+{
+  "playerId": 2
+}
+
+###
+
+POST {{baseUrl}}/api/game-master/sessions/{{sessionId}}/players
+Authorization: Bearer {{gameMasterToken}}
+Content-Type: application/json
+
+{
+  "playerId": 3
+}
+
+###
+
+POST {{baseUrl}}/api/game-master/sessions/{{sessionId}}/players
+Authorization: Bearer {{gameMasterToken}}
+Content-Type: application/json
+
+{
+  "playerId": 4
+}
+
+###
+
+### 9.3 - Vérifier la liste des joueurs
+GET {{baseUrl}}/api/game-master/sessions/{{sessionId}}/players
+Authorization: Bearer {{gameMasterToken}}
+
+###
+
+### 9.4 - Démarrer la session
+POST {{baseUrl}}/api/game-master/sessions/{{sessionId}}/start
+Authorization: Bearer {{gameMasterToken}}
+
+###
+
+### 9.5 - Consulter le classement initial
+GET {{baseUrl}}/api/game-master/sessions/{{sessionId}}/leaderboard
+Authorization: Bearer {{gameMasterToken}}
+
+###
+
+### 9.6 - Mettre à jour les classements
+POST {{baseUrl}}/api/game-master/sessions/{{sessionId}}/update-rankings
+Authorization: Bearer {{gameMasterToken}}
+
+###
+
+### 9.7 - Consulter le classement mis à jour
+GET {{baseUrl}}/api/game-master/sessions/{{sessionId}}/leaderboard
+Authorization: Bearer {{gameMasterToken}}
+
+###
+
+### 9.8 - Terminer la session
+POST {{baseUrl}}/api/game-master/sessions/{{sessionId}}/complete
+Authorization: Bearer {{gameMasterToken}}
+
+###
+
+### 9.9 - Consulter le classement final
+GET {{baseUrl}}/api/game-master/sessions/{{sessionId}}/leaderboard
+Authorization: Bearer {{gameMasterToken}}
+
+###
+
+### ============================================================
+### 📊 FIN DES TESTS
+### ============================================================
+### 
+### ✅ Checklist de validation :
+### □ Création de session réussie
+### □ Ajout de joueurs fonctionnel
+### □ Démarrage de session OK
+### □ Pause/Reprise fonctionnelles
+### □ Classement mis à jour
+### □ Clôture de session OK
+### □ Sécurité validée (401, 403)
+### □ Validations de données OK
+### □ Suppression/Annulation OK
+### 
+### ============================================================
+
+

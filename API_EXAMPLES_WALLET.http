@@ -1,0 +1,321 @@
+### Wallet API Examples for PiBourseFin
+### Use with REST Client extension in VS Code or IntelliJ IDEA
+
+@baseUrl = http://localhost:8084
+@token = {{login.response.body.token}}
+
+### ============================================
+### STEP 1: Register a new player
+### ============================================
+# @name register
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "wallettest",
+  "email": "wallettest@example.com",
+  "password": "password123"
+}
+
+### ============================================
+### STEP 2: Login to get JWT token
+### ============================================
+# @name login
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "wallettest@example.com",
+  "password": "password123"
+}
+
+### ============================================
+### STEP 3: Get my wallet (automatic creation on registration)
+### ============================================
+GET {{baseUrl}}/api/wallet/my-wallet
+Authorization: Bearer {{token}}
+
+### ============================================
+### Get current balance
+### ============================================
+GET {{baseUrl}}/api/wallet/balance
+Authorization: Bearer {{token}}
+
+### ============================================
+### Check if balance is sufficient for amount
+### ============================================
+GET {{baseUrl}}/api/wallet/check-balance?amount=5000.00
+Authorization: Bearer {{token}}
+
+### ============================================
+### Deposit funds
+### ============================================
+POST {{baseUrl}}/api/wallet/deposit
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "amount": 5000.00,
+  "description": "Monthly deposit"
+}
+
+### ============================================
+### Withdraw funds
+### ============================================
+POST {{baseUrl}}/api/wallet/withdraw
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "amount": 2000.00,
+  "description": "Cash withdrawal"
+}
+
+### ============================================
+### Get all transactions
+### ============================================
+GET {{baseUrl}}/api/wallet/transactions
+Authorization: Bearer {{token}}
+
+### ============================================
+### Get paginated transactions
+### ============================================
+GET {{baseUrl}}/api/wallet/transactions/paginated?page=0&size=10
+Authorization: Bearer {{token}}
+
+### ============================================
+### Get transactions by type (DEPOSIT, WITHDRAWAL, etc.)
+### ============================================
+GET {{baseUrl}}/api/wallet/transactions/type/DEPOSIT
+Authorization: Bearer {{token}}
+
+### ============================================
+### Get transactions between dates
+### Format: yyyy-MM-ddTHH:mm:ss
+### ============================================
+GET {{baseUrl}}/api/wallet/transactions/date-range?startDate=2024-01-01T00:00:00&endDate=2024-12-31T23:59:59
+Authorization: Bearer {{token}}
+
+### ============================================
+### TRANSFER SCENARIO
+### ============================================
+
+### 1. Register second player
+# @name register2
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "recipient",
+  "email": "recipient@example.com",
+  "password": "password123"
+}
+
+### 2. Login as second player
+# @name login2
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "recipient@example.com",
+  "password": "password123"
+}
+
+### 3. Get recipient's player ID
+GET {{baseUrl}}/api/wallet/my-wallet
+Authorization: Bearer {{login2.response.body.token}}
+
+### 4. Transfer from first player to second player
+### (Use the playerId from step 3 as recipientPlayerId)
+POST {{baseUrl}}/api/wallet/transfer
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "recipientPlayerId": 2,
+  "amount": 1000.00,
+  "description": "Payment for services"
+}
+
+### ============================================
+### ADMIN ENDPOINTS
+### ============================================
+
+### Register admin user (first set role in database to ROLE_ADMIN)
+# @name adminLogin
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "admin@example.com",
+  "password": "admin123"
+}
+
+@adminToken = {{adminLogin.response.body.token}}
+
+### Get any player's wallet by player ID
+GET {{baseUrl}}/api/wallet/player/1
+Authorization: Bearer {{adminToken}}
+
+### Admin credit a player's wallet
+POST {{baseUrl}}/api/wallet/admin/credit/1?amount=5000.00&reason=Contest%20prize
+Authorization: Bearer {{adminToken}}
+
+### Admin debit a player's wallet
+POST {{baseUrl}}/api/wallet/admin/debit/1?amount=100.00&reason=Penalty
+Authorization: Bearer {{adminToken}}
+
+### Get any player's transaction history
+GET {{baseUrl}}/api/wallet/admin/transactions/1
+Authorization: Bearer {{adminToken}}
+
+### ============================================
+### ERROR SCENARIOS (for testing)
+### ============================================
+
+### Try to withdraw more than balance (should fail)
+POST {{baseUrl}}/api/wallet/withdraw
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "amount": 999999.00,
+  "description": "This should fail"
+}
+
+### Try to deposit negative amount (should fail)
+POST {{baseUrl}}/api/wallet/deposit
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "amount": -100.00,
+  "description": "This should fail"
+}
+
+### Try to transfer to same wallet (should fail)
+POST {{baseUrl}}/api/wallet/transfer
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "recipientPlayerId": 1,
+  "amount": 100.00,
+  "description": "This should fail"
+}
+
+### Try to access wallet without token (should fail with 401)
+GET {{baseUrl}}/api/wallet/my-wallet
+
+### ============================================
+### INTEGRATION EXAMPLE: Stock Purchase Flow
+### ============================================
+
+### 1. Check balance before purchase
+GET {{baseUrl}}/api/wallet/check-balance?amount=5000.00
+Authorization: Bearer {{token}}
+
+### 2. If balance sufficient, withdraw for stock purchase
+POST {{baseUrl}}/api/wallet/withdraw
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "amount": 5000.00,
+  "description": "Purchase: 10 shares of AAPL @ $500.00"
+}
+
+### 3. Later, deposit proceeds from stock sale
+POST {{baseUrl}}/api/wallet/deposit
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "amount": 5500.00,
+  "description": "Sale: 10 shares of AAPL @ $550.00"
+}
+
+### ============================================
+### COMPLETE WORKFLOW TEST
+### ============================================
+
+### Step 1: Register
+POST {{baseUrl}}/api/auth/register
+Content-Type: application/json
+
+{
+  "username": "completetest",
+  "email": "completetest@example.com",
+  "password": "password123"
+}
+
+### Step 2: Login
+# @name completeLogin
+POST {{baseUrl}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "completetest@example.com",
+  "password": "password123"
+}
+
+@completeToken = {{completeLogin.response.body.token}}
+
+### Step 3: Check initial wallet (should have 10000.00)
+GET {{baseUrl}}/api/wallet/my-wallet
+Authorization: Bearer {{completeToken}}
+
+### Step 4: Make a deposit
+POST {{baseUrl}}/api/wallet/deposit
+Authorization: Bearer {{completeToken}}
+Content-Type: application/json
+
+{
+  "amount": 5000.00,
+  "description": "First deposit"
+}
+
+### Step 5: Make a withdrawal
+POST {{baseUrl}}/api/wallet/withdraw
+Authorization: Bearer {{completeToken}}
+Content-Type: application/json
+
+{
+  "amount": 3000.00,
+  "description": "First withdrawal"
+}
+
+### Step 6: Check final balance (should be 12000.00)
+GET {{baseUrl}}/api/wallet/balance
+Authorization: Bearer {{completeToken}}
+
+### Step 7: View transaction history (should have 3 transactions)
+GET {{baseUrl}}/api/wallet/transactions
+Authorization: Bearer {{completeToken}}
+
+### ============================================
+### NOTES
+### ============================================
+
+# Available Transaction Types:
+# - DEPOSIT: Funds added to wallet
+# - WITHDRAWAL: Funds removed from wallet
+# - STOCK_PURCHASE: Payment for stock purchase
+# - STOCK_SALE: Proceeds from stock sale
+# - ADMIN_CREDIT: Manual credit by administrator
+# - ADMIN_DEBIT: Manual debit by administrator
+# - TRANSFER_IN: Incoming transfer from another user
+# - TRANSFER_OUT: Outgoing transfer to another user
+# - BONUS: System-generated bonus
+# - PENALTY: System-generated penalty
+
+# Configuration (in application.properties):
+# wallet.default.currency=USD
+# wallet.initial.balance=10000.00
+
+# Roles:
+# - ROLE_PLAYER: Can manage own wallet
+# - ROLE_ADMIN: Can manage all wallets
+
+### ============================================
+

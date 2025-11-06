@@ -49,6 +49,9 @@ public class AuthController {
     @Autowired
     private PasswordResetService passwordResetService;
 
+    @Autowired
+    private tn.esprit.piboursebackend.Player.Services.IWalletService walletService;
+
     /**
      * Endpoint de connexion
      * POST /api/auth/login
@@ -142,7 +145,16 @@ public class AuthController {
         player.setRole(role);
 
         // Sauvegarder le player
-        playerRepository.save(player);
+        Player savedPlayer = playerRepository.save(player);
+
+        // Créer automatiquement un wallet pour le nouveau joueur
+        try {
+            walletService.createWalletForPlayer(savedPlayer, null, null);
+        } catch (Exception e) {
+            // Log l'erreur mais ne pas bloquer l'inscription
+            // Le wallet pourra être créé plus tard si nécessaire
+            System.err.println("Erreur lors de la création du wallet: " + e.getMessage());
+        }
 
         return ResponseEntity.ok(new MessageResponse("User registered successfully!"));
     }
