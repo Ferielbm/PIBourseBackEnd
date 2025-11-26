@@ -7,8 +7,8 @@ public record TradeProposal(
         Long stockId,
         String symbol,
         String currency,
-        String side,          // BUY / SELL / NONE
-        BigDecimal qty,       // integer qty (rounded)
+        String side,
+        BigDecimal qty,
         BigDecimal deltaValueBase,
-        BigDecimal deltaWeight // target - current
+        BigDecimal deltaWeight
 ) {}

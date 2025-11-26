@@ -17,10 +17,9 @@ import java.util.List;
 @Service
 public class PerformanceService {
 
-    // === make the cash point type CLASS-SCOPED ===
     public static record CashPoint(Instant t, BigDecimal amount) {}
 
-    private final PortfolioSnapshotRepository snapRepo; // (kept for future use)
+    private final PortfolioSnapshotRepository snapRepo;
     private final CashFlowRepository cashRepo;
     private final NavService navService;
 
@@ -28,7 +27,6 @@ public class PerformanceService {
         this.snapRepo = s; this.cashRepo = c; this.navService = nav;
     }
 
-    // ---------- TWR ----------
     public BigDecimal performanceTWR(Long portfolioId, Instant start, Instant end) {
         var cf = cashRepo.findAll().stream()
                 .filter(x -> x.getPortfolio().getId().equals(portfolioId))
@@ -48,14 +46,12 @@ public class PerformanceService {
 
             BigDecimal cfAmountSigned = signed(flow);
 
-            // r = (NAV_end - NAV_start - CF_in_period) / NAV_start
             BigDecimal r = navEnd.subtract(navStart).subtract(cfAmountSigned)
                     .divide(navStart.max(BigDecimal.valueOf(1e-9)), MathContext.DECIMAL64);
             twrProduct = twrProduct.multiply(BigDecimal.ONE.add(r));
-            t0 = t1; // next period starts at the CF time
+            t0 = t1;
         }
 
-        // last sub-period up to end (no CF at end)
         var navStart = navService.computeNAV(portfolioId, t0, pricing).nav();
         var navEnd   = navService.computeNAV(portfolioId, end, pricing).nav();
         BigDecimal rLast = navEnd.subtract(navStart)
@@ -73,14 +69,12 @@ public class PerformanceService {
         };
     }
 
-    // ---------- MWR (XIRR-like) ----------
     public BigDecimal performanceMWR(Long portfolioId, Instant start, Instant end) {
         var pricing = PortfolioSnapshot.PricingMode.MARK_TO_MARKET;
 
         var navStart = navService.computeNAV(portfolioId, start, pricing).nav();
         var navEnd   = navService.computeNAV(portfolioId, end,   pricing).nav();
 
-        // Build cash flow series: start NAV as negative, intermediate CF signed, end NAV as positive
         List<CashPoint> series = new ArrayList<>();
         series.add(new CashPoint(start, navStart.negate()));
 
@@ -92,8 +86,7 @@ public class PerformanceService {
 
         series.add(new CashPoint(end, navEnd));
 
-        // Newton solver (guarded)
-        BigDecimal r = BigDecimal.valueOf(0.10); // 10% initial guess
+        BigDecimal r = BigDecimal.valueOf(0.10);
         for (int i=0; i<50; i++) {
             var f  = npv(series, r, start);
             var df = dNpv(series, r, start);

@@ -18,7 +18,6 @@ import java.util.List;
 public interface OrderRepository extends JpaRepository<Order, Long> {
 
 
-    // Taker = BUY -> on prend les SELL (asks) au meilleur prix puis FIFO
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
       SELECT o FROM Order o
@@ -31,7 +30,6 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     """)
     List<Order> findAsksForMatching(@Param("stock") Stock stock);
 
-    // Taker = SELL -> on prend les BUY (bids) au meilleur prix puis FIFO
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("""
       SELECT o FROM Order o

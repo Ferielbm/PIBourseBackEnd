@@ -21,19 +21,19 @@ public class Stock {
     private Long id;
 
     @Column(nullable=false, unique=true)
-    private String symbol;             // e.g., "AAPL"
+    private String symbol;
 
     @Column(nullable=false, length=3)
-    private String currency;           // e.g., "USD", "TND"
+    private String currency;
 
-    private String companyName;        // optional
-    private String sector;             // optional
+    private String companyName;
+    private String sector;
 
     @Column(precision=24, scale=6)
-    private BigDecimal marketCap;      // optional
+    private BigDecimal marketCap;
 
     @Column(precision=20, scale=6)
-    private BigDecimal lastPrice;      // last known price in Stock.currency
+    private BigDecimal lastPrice;
 
     @OneToMany(mappedBy = "stock", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<PriceHistory> priceHistoryList = new ArrayList<>();

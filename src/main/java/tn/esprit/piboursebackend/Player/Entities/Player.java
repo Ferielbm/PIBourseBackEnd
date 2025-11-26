@@ -21,7 +21,6 @@ public class Player {
     @OneToMany(mappedBy = "player", cascade = CascadeType.ALL)
     private List<Transaction> transactions;
 
-    // Getters et setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 

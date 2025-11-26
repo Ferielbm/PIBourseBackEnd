@@ -18,7 +18,7 @@ public class PositionMathController {
 
     @PostMapping("/apply-fill")
     public ResponseEntity<PositionView> applyFill(@RequestBody FillRequest req) {
-        return ResponseEntity.ok(svc.applyFill(req));
+        return ResponseEntity.ok(svc.applyFillWithReservation(req));
     }
 
     @GetMapping("/{positionId}/mtm")

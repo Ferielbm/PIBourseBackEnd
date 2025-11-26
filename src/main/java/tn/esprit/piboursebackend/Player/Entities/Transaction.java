@@ -9,7 +9,7 @@ public class Transaction {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String type; // BUY, SELL, DEPOSIT, WITHDRAW
+    private String type;
     private double amount;
 
 
@@ -17,7 +17,6 @@ public class Transaction {
     @JoinColumn(name = "player_id")
     private Player player;
 
-    // Getters et setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 

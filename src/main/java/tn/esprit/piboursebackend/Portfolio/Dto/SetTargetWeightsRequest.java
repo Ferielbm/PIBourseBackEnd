@@ -6,5 +6,5 @@ import java.util.Map;
 
 public record SetTargetWeightsRequest(
         Long portfolioId,
-        Map<Long, BigDecimal> weights  // key = stockId, value = weight in [0,1]
+        Map<Long, BigDecimal> weights
 ) {}

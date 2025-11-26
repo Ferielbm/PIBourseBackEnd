@@ -24,7 +24,7 @@ public class Loan {
     private LocalDate repaymentDate;
 
     private BigDecimal totalToRepay;
-    private String status; // PENDING, APPROVED, REPAID, LATE, REJECTED
+    private String status;
 
     private int delayDays;
     private BigDecimal penaltyAmount;

@@ -19,9 +19,9 @@ public class OrderBook {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private BigDecimal currentPrice;      // Dernier prix exécuté
-    private BigDecimal spread;            // Écart entre offre et demande
-    private BigDecimal liquidity;         // Indicateur global
+    private BigDecimal currentPrice;
+    private BigDecimal spread;
+    private BigDecimal liquidity;
 
     @OneToOne
     @JoinColumn(name = "stock_id")

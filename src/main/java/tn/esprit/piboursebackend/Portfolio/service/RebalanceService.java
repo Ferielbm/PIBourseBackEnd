@@ -32,27 +32,24 @@ public class RebalanceService {
         this.modelRepo = m; this.modelLineRepo = ml; this.md = md; this.navService = nav;
     }
 
-    // -------- setTargetWeights --------
     @Transactional
     public List<TargetWeight> setTargetWeights(SetTargetWeightsRequest req) {
         var portfolio = portfolioRepo.findById(req.portfolioId())
                 .orElseThrow(() -> new IllegalArgumentException("Portfolio not found"));
 
-        // validate sum ≈ 1.0 (allow tiny epsilon)
         BigDecimal sum = req.weights().values().stream()
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         if (sum.subtract(BigDecimal.ONE).abs().doubleValue() > 1e-6) {
             throw new IllegalArgumentException("weights must sum to 1.0 (±1e-6). Got " + sum);
         }
 
-        // strategy: replace existing set with given map
         targetRepo.deleteByPortfolio_Id(req.portfolioId());
 
         List<TargetWeight> out = new ArrayList<>();
         for (var e : req.weights().entrySet()) {
             var tw = TargetWeight.builder()
                     .portfolio(portfolio)
-                    .stock(StockRef(e.getKey())) // helper below
+                    .stock(StockRef(e.getKey()))
                     .weight(e.getValue())
                     .build();
             out.add(targetRepo.save(tw));
@@ -61,13 +58,11 @@ public class RebalanceService {
     }
 
     private Stock StockRef(Long id) {
-        // lightweight reference without loading the whole entity
         Stock s = new Stock();
         s.setId(id);
         return s;
     }
 
-    // -------- proposeRebalanceTrades --------
     public List<TradeProposal> proposeRebalanceTrades(ProposeRebalanceRequest req) {
         var portfolio = portfolioRepo.findById(req.portfolioId())
                 .orElseThrow(() -> new IllegalArgumentException("Portfolio not found"));
@@ -77,10 +72,8 @@ public class RebalanceService {
         var tol = (req.toleranceBps() == null ? 0 : req.toleranceBps());
         BigDecimal tolDec = BigDecimal.valueOf(tol).divide(BigDecimal.valueOf(10_000), MathContext.DECIMAL64);
 
-        // NAV (base)
         var nav = navService.computeNAV(req.portfolioId(), asOf, PricingMode.MARK_TO_MARKET).nav();
 
-        // current MV per stock (base)
         Map<Long, BigDecimal> mvBase = new HashMap<>();
         Map<Long, Stock> stockById = new HashMap<>();
 
@@ -94,15 +87,13 @@ public class RebalanceService {
             mvBase.merge(s.getId(), mv, BigDecimal::add);
         });
 
-        // current weight per stock
         Map<Long, BigDecimal> wCurr = new HashMap<>();
         for (var e : mvBase.entrySet()) {
             wCurr.put(e.getKey(), e.getValue().divide(nav.max(BigDecimal.valueOf(1e-9)), MathContext.DECIMAL64));
         }
 
-        // target weights
         List<TargetWeight> targets = targetRepo.findByPortfolio_Id(req.portfolioId());
-        if (targets.isEmpty()) return List.of(); // nothing to do
+        if (targets.isEmpty()) return List.of();
 
         List<TradeProposal> proposals = new ArrayList<>();
 

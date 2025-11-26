@@ -19,9 +19,9 @@ public class Market {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private LocalDateTime currentDate;    // Date courante simulée
-    private Boolean isOpen;               // Marché ouvert/fermé
-    private BigDecimal timeCompressionRatio;  // Ex: 1h réelle = 1 semaine simulée
+    private LocalDateTime currentDate;
+    private Boolean isOpen;
+    private BigDecimal timeCompressionRatio;
 
     @OneToMany(cascade = CascadeType.ALL)
     @JoinColumn(name = "market_id")

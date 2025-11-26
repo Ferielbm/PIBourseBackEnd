@@ -31,7 +31,6 @@ public class NavService {
 
         var base = portfolio.getBaseCurrency();
 
-        // cash in base (use new repo method)
         var cbList = cashBalanceRepo.findByPortfolio_Id(portfolioId);
 
         BigDecimal cashBase = BigDecimal.ZERO;
@@ -40,7 +39,6 @@ public class NavService {
             cashBase = cashBase.add(cb.getBalance().multiply(fx));
         }
 
-        // positions
         var positions = positionRepo.findByPortfolio_Id(portfolioId);
         var lines = new ArrayList<NavBreakdown.Line>();
         BigDecimal mvTotal = BigDecimal.ZERO;
@@ -48,8 +46,8 @@ public class NavService {
         for (var pos : positions) {
             var stock = pos.getStock();
             var qty = BigDecimal.valueOf(pos.getQuantity());
-            var price = md.getPrice(stock, asOf, mode);            // stock currency
-            var fx    = md.getFx(stock.getCurrency(), base, asOf); // to base
+            var price = md.getPrice(stock, asOf, mode);
+            var fx    = md.getFx(stock.getCurrency(), base, asOf);
             var mvBase = qty.multiply(price).multiply(fx);
             mvTotal = mvTotal.add(mvBase);
 

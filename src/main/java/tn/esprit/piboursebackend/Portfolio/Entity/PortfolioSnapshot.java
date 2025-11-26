@@ -35,7 +35,6 @@ public class PortfolioSnapshot {
     @Column(name="created_at", nullable=false, updatable=false)
     private Instant createdAt;
 
-    // optional: store what prices/FX were used (audit/diagnostics)
     @Column(name="details_json", columnDefinition="json")
     private String detailsJson;
 

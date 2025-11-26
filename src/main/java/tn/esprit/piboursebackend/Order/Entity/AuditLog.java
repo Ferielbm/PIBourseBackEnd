@@ -16,13 +16,13 @@ public class AuditLog {
     private Long version;
 
     @Column(nullable = false, length = 160)
-    private String actor;   // identifiant joueur / module
+    private String actor;
 
     @Column(nullable = false, length = 80)
-    private String action;  // ORDER_PLACED, TRADE_EXECUTED, ...
+    private String action;
 
     @Column(length = 2000)
-    private String details; // JSON / description
+    private String details;
 
     @CreationTimestamp
     @Column(nullable = false, updatable = false)

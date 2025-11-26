@@ -7,5 +7,5 @@ import java.util.Map;
 public record ProposeRebalanceRequest(
         Long portfolioId,
         Instant asOf,
-        Integer toleranceBps  // e.g. 50 = 0.50%
+        Integer toleranceBps
 ) {}

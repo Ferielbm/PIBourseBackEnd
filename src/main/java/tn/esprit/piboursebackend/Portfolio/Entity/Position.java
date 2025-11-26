@@ -6,6 +6,14 @@ import tn.esprit.piboursebackend.Marche.Entity.Stock;
 
 import java.math.BigDecimal;
 @Entity
+@Table(name = "position",
+        uniqueConstraints = {
+                @UniqueConstraint(name = "ux_position_portfolio_stock", columnNames = {"portfolio_id", "stock_id"})
+        },
+        indexes = {
+                @Index(name = "ix_position_stock", columnList = "stock_id")
+        }
+)
 @Getter
 @Setter
 @NoArgsConstructor
@@ -13,26 +21,25 @@ import java.math.BigDecimal;
 @Builder
 public class Position {
     @Id
-    @GeneratedValue
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long positionId;
 
     private Integer quantity;
+
     @Column(precision=20, scale=6)
     private BigDecimal averagePrice;
 
     @Transient
     private BigDecimal currentValue;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "stock_id", nullable = false)
     private Stock stock;
-
-    // ✅ Correct: each Position belongs to ONE Portfolio (not a list)
+    @Column(nullable = false)
+    private Integer reservedQuantity = 0;
     @ManyToOne
     @JoinColumn(name = "portfolio_id", nullable = false)
     private Portfolio portfolio;
-
-    public BigDecimal calculateProfitLoss(BigDecimal currentPrice) {
-        return currentPrice.subtract(averagePrice)
-                .multiply(BigDecimal.valueOf(quantity));
-    }
+    @Version
+    private Long version;
 }

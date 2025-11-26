@@ -22,6 +22,5 @@ public interface CashBalanceRepository extends JpaRepository<CashBalance, CashBa
                      @Param("ccy") String currency,
                      @Param("delta") BigDecimal delta);
 
-    // NEW: used by NavService instead of findAll().stream().filter(...)
     List<CashBalance> findByPortfolio_Id(Long portfolioId);
 }

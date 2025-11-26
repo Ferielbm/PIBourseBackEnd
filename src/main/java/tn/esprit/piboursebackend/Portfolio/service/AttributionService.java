@@ -34,7 +34,6 @@ public class AttributionService {
 
         var positions = posRepo.findByPortfolio_Id(portfolioId);
 
-        // compute start & end MV per asset
         Map<Long, BigDecimal> mvStart = new HashMap<>();
         Map<Long, BigDecimal> mvEnd   = new HashMap<>();
 

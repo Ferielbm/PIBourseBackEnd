@@ -18,9 +18,9 @@ public class Anomaly {
     private Long id;
 
     private LocalDateTime detectedAt;
-    private String type;             // PUMP_AND_DUMP, SPOOFING, etc.
-    private BigDecimal severity;         // Score d’anomalie
-    private String description;      // Détails
+    private String type;
+    private BigDecimal severity;
+    private String description;
 
     @ManyToOne
     @JoinColumn(name = "stock_id")
