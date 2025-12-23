@@ -1,6 +1,8 @@
 package tn.esprit.piboursebackend.Marche.Entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
@@ -15,6 +17,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 @Table(name = "markets")
+@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 public class Market {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -36,7 +39,7 @@ public class Market {
     private BigDecimal timeCompressionRatio;
 
     @OneToMany(mappedBy = "market", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
-    @JsonIgnore
+    @JsonManagedReference("market-stocks")
     private List<Stock> stocks = new ArrayList<>();
 
     @Column(name = "created_at")

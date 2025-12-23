@@ -18,4 +18,8 @@ public interface ScheduledOrderRepository extends JpaRepository<ScheduledOrder, 
 
     // utile si tu filtres seulement par symbole + status ailleurs
     List<ScheduledOrder> findByDesiredSymbolAndStatus(String desiredSymbol, ScheduledOrderStatus status);
+
+    // ---- Ajouts pour pouvoir récupérer tous les statuts sans filtrage ----
+    List<ScheduledOrder> findByPlayerIdOrderByCreatedAtAsc(Long playerId);
+    List<ScheduledOrder> findByPlayerIdAndDesiredSymbolOrderByCreatedAtAsc(Long playerId, String desiredSymbol);
 }

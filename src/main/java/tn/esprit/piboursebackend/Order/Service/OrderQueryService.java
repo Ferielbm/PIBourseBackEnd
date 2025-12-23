@@ -23,6 +23,11 @@ public class OrderQueryService {
     private final StockRepository stockRepo;
 
     @Transactional(readOnly = true)
+    public List<Order> getOrdersForPlayer(Long playerId) {
+        return orderRepo.findByPlayerIdOrderByIdDesc(playerId);
+    }
+
+    @Transactional(readOnly = true)
     public BookSnapshot getBook(String symbol) {
         Stock stock = stockRepo.findBySymbol(symbol)
                 .orElseThrow(() -> new IllegalArgumentException("Unknown symbol: " + symbol));
@@ -35,15 +40,22 @@ public class OrderQueryService {
                 stock, OrderSide.SELL, open);
 
         BigDecimal last = tradeRepo.findTop50ByStockOrderByExecutedAtDesc(stock).stream()
-                .findFirst().map(Trade::getPrice).orElse(null);
+                .findFirst()
+                .map(Trade::getPrice)
+                .orElse(null);
 
-        return new BookSnapshot(symbol, aggregate(bids), aggregate(asks), last);
+        return new BookSnapshot(
+                symbol,
+                aggregate(bids),
+                aggregate(asks),
+                last
+        );
     }
 
     private static Map<BigDecimal, BigDecimal> aggregate(List<Order> orders) {
         Map<BigDecimal, BigDecimal> levels = new LinkedHashMap<>();
         for (Order o : orders) {
-            if (o.getPrice() == null) continue; // on n’agrège que des LIMIT
+            if (o.getPrice() == null) continue; // seulement LIMIT
             levels.merge(o.getPrice(), o.getRemainingQuantity(), BigDecimal::add);
         }
         return levels;
@@ -54,5 +66,5 @@ public class OrderQueryService {
             Map<BigDecimal, BigDecimal> bids,
             Map<BigDecimal, BigDecimal> asks,
             BigDecimal lastPrice
-    ) {}
+    ) { }
 }

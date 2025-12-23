@@ -10,32 +10,40 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
-@Table(name = "wallet_reservations",
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@Table(
+        name = "wallet_reservations",
         indexes = {
                 @Index(name = "idx_wr_player_status", columnList = "playerId,status"),
                 @Index(name = "idx_wr_order_status", columnList = "orderId,status")
-        })
+        }
+)
 public class WalletReservation {
 
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @Version
     private Long version;
 
-    // ⚠️ On stocke directement l'id du player pour éviter une dépendance forte au module Player
+    // On stocke directement l'id du player pour découpler du module Player
     @Column(nullable = false)
     private Long playerId;
 
-    // L’ordre pour lequel on réserve
+    // Id de l’ordre pour lequel on réserve
     @Column(nullable = false)
     private Long orderId;
 
-    // Montant réservé initial et montant restant consommable
+    // Montant réservé initial
     @Column(nullable = false, precision = 19, scale = 6)
     private BigDecimal amountReserved;
 
+    // Montant restant consommable (diminue à chaque trade)
     @Column(nullable = false, precision = 19, scale = 6)
     private BigDecimal remainingAmount;
 

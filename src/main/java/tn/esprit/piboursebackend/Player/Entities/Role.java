@@ -4,4 +4,6 @@ public enum Role {
 
         ROLE_ADMIN,
         ROLE_PLAYER,
+        ROLE_MENEUR_JEU
+
 }

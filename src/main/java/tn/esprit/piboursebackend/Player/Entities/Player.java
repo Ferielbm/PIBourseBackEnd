@@ -1,6 +1,7 @@
 package tn.esprit.piboursebackend.Player.Entities;
 
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import java.util.List;
 
 @Entity
@@ -21,6 +22,10 @@ public class Player {
     @OneToMany(mappedBy = "player", cascade = CascadeType.ALL)
     private List<Transaction> transactions;
 
+    @OneToOne(mappedBy = "player", cascade = CascadeType.ALL)
+    @JsonManagedReference
+    private Wallet wallet;
+
     // Getters et setters
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -39,4 +44,7 @@ public class Player {
 
     public List<Transaction> getTransactions() { return transactions; }
     public void setTransactions(List<Transaction> transactions) { this.transactions = transactions; }
+
+    public Wallet getWallet() { return wallet; }
+    public void setWallet(Wallet wallet) { this.wallet = wallet; }
 }

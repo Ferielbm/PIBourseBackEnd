@@ -1,178 +1,376 @@
 package tn.esprit.piboursebackend.Order.Service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tn.esprit.piboursebackend.Marche.Entity.PriceHistory;
 import tn.esprit.piboursebackend.Marche.Entity.Stock;
+import tn.esprit.piboursebackend.Marche.Repository.PriceHistoryRepository;
 import tn.esprit.piboursebackend.Marche.Repository.StockRepository;
 import tn.esprit.piboursebackend.Order.Entity.*;
 import tn.esprit.piboursebackend.Order.Repository.OrderRepository;
 import tn.esprit.piboursebackend.Order.Repository.TradeRepository;
+import tn.esprit.piboursebackend.Order.dto.OrderBookStats;
+import tn.esprit.piboursebackend.Order.Entity.BookSnapshot;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class MatchingEngineService {
 
     private final OrderRepository orderRepo;
-    private final TradeRepository tradeRepo;
     private final StockRepository stockRepo;
-    private final AuditLogService audit;
+    private final OrderBookService orderBookService;
+    private final TradeRepository tradeRepo;
+    private final WalletService walletService;
+    private final PriceAlertMonitorService priceAlertMonitorService;
+    private final PriceHistoryRepository priceHistoryRepo;
+
+    /* -------------------------------------------
+       Hooks pour le carnet d’ordres / WebSocket
+       ------------------------------------------- */
+
+    public void onLimitOrderPlaced(Long playerId, String symbol, boolean isBid, double price, long qty) {
+        // Recalcule la profondeur à ce niveau depuis la BDD (agrégation correcte)
+        orderBookService.recomputeLevelFromDb(symbol, isBid, price);
+        orderBookService.publishSnapshot(playerId, symbol);
+    }
+
+    public void onTradeExecuted(Long playerIdBuyer, Long playerIdSeller, String symbol, double executedPrice) {
+        orderBookService.setLastPrice(symbol, executedPrice);
+        orderBookService.publishSnapshot(playerIdBuyer, symbol);
+        orderBookService.publishSnapshot(playerIdSeller, symbol);
+    }
+
+    /* -------------------------------------------
+       Stats simples du carnet (Bid/Ask/Last)
+       ------------------------------------------- */
+
+    public OrderBookStats getStatsForSymbol(String symbol) {
+        BookSnapshot snap = orderBookService.getSnapshot(symbol);
+
+        BigDecimal bestBid = null;
+        BigDecimal bestAsk = null;
+        BigDecimal last = null;
+
+        try {
+            if (snap.getBids() != null && !snap.getBids().isEmpty()) {
+                // keys are formatted strings; pick max for bids
+                double maxBid = snap.getBids().keySet().stream()
+                        .mapToDouble(k -> {
+                            try { return Double.parseDouble(k); } catch (Exception e) { return Double.NEGATIVE_INFINITY; }
+                        })
+                        .max().orElse(Double.NaN);
+                if (!Double.isNaN(maxBid)) bestBid = BigDecimal.valueOf(maxBid);
+            }
+            if (snap.getAsks() != null && !snap.getAsks().isEmpty()) {
+                // keys are formatted strings; pick min for asks
+                double minAsk = snap.getAsks().keySet().stream()
+                        .mapToDouble(k -> {
+                            try { return Double.parseDouble(k); } catch (Exception e) { return Double.POSITIVE_INFINITY; }
+                        })
+                        .min().orElse(Double.NaN);
+                if (!Double.isNaN(minAsk)) bestAsk = BigDecimal.valueOf(minAsk);
+            }
+            if (snap.getLastPrice() != null) {
+                last = BigDecimal.valueOf(snap.getLastPrice());
+            }
+        } catch (Exception ignored) {}
+
+        return new OrderBookStats(symbol, bestBid, bestAsk, last);
+    }
+
+    /* -------------------------------------------
+       Place Order + Matching immédiat
+       ------------------------------------------- */
 
     @Transactional
-    public Order placeOrder(String actor,
-                            String symbol,
-                            OrderSide side,
-                            OrderType type,
-                            TimeInForce tif,
-                            BigDecimal quantity,
-                            BigDecimal limitPrice) {
-
-        if (symbol == null || symbol.isBlank()) throw new IllegalArgumentException("symbol is required");
-        if (quantity == null || quantity.signum() <= 0) throw new IllegalArgumentException("quantity must be > 0");
-        if (type == OrderType.LIMIT && (limitPrice == null || limitPrice.signum() <= 0))
-            throw new IllegalArgumentException("LIMIT order requires positive price");
-
+    public Order placeOrder(
+            Long playerId,
+            String symbol,
+            OrderSide side,
+            OrderType type,
+            TimeInForce tif,
+            BigDecimal quantity,
+            BigDecimal price
+    ) {
         Stock stock = stockRepo.findBySymbol(symbol)
                 .orElseThrow(() -> new IllegalArgumentException("Unknown symbol: " + symbol));
+        
+        // Synchroniser le currentPrice du stock avec le dernier prix de price_history
+        priceHistoryRepo.findLatestBySymbol(symbol).ifPresent(priceHistory -> {
+            stock.setCurrentPrice(priceHistory.getClosePrice());
+        });
 
-        // MARKET => IOC par défaut ; sinon default = DAY
-        if (type == OrderType.MARKET && (tif == null || tif == TimeInForce.DAY || tif == TimeInForce.GTC)) {
-            tif = TimeInForce.IOC;
-        }
-        if (tif == null) tif = TimeInForce.DAY;
-
-        Order taker = Order.builder()
-                .stock(stock)
-                .side(side)
-                .type(type)
-                .tif(tif)
-                .quantity(quantity)
-                .remainingQuantity(quantity)
-                .price(type == OrderType.LIMIT ? limitPrice : null)
-                .status(OrderStatus.PENDING)
-                .build();
-        taker = orderRepo.save(taker);
-
-        // FOK : doit être totalement exécutable sinon rejet
-        if (tif == TimeInForce.FOK) {
-            BigDecimal canFill = estimateFillableQty(stock, taker);
-            if (canFill.compareTo(quantity) < 0) {
-                taker.setStatus(OrderStatus.REJECTED);
-                orderRepo.save(taker);
-                audit.log(actor, "ORDER_REJECTED_FOK", "orderId=" + taker.getId());
-                return taker;
-            }
+        if (quantity == null || quantity.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Quantity must be > 0");
         }
 
-        matchLoop(stock, taker, actor);
-
-        boolean filled = taker.getRemainingQuantity().compareTo(BigDecimal.ZERO) == 0;
-        if (type == OrderType.MARKET || tif == TimeInForce.IOC) {
-            if (filled) taker.setStatus(OrderStatus.FILLED);
-            else taker.setStatus(
-                    taker.getQuantity().compareTo(taker.getRemainingQuantity()) == 0
-                            ? OrderStatus.REJECTED
-                            : OrderStatus.CANCELLED);
-        } else {
-            if (filled) taker.setStatus(OrderStatus.FILLED);
-            else if (taker.getRemainingQuantity().compareTo(taker.getQuantity()) < 0)
-                taker.setStatus(OrderStatus.PARTIALLY_FILLED);
-            else taker.setStatus(OrderStatus.PENDING);
+        if (type == OrderType.LIMIT && (price == null || price.compareTo(BigDecimal.ZERO) <= 0)) {
+            throw new IllegalArgumentException("Price must be > 0 for LIMIT orders");
         }
-        taker = orderRepo.save(taker);
-        audit.log(actor, "ORDER_PLACED", "orderId=" + taker.getId() + ", status=" + taker.getStatus());
-        return taker;
+
+        Order order = new Order();
+        order.setPlayerId(playerId);
+        order.setStock(stock);
+        order.setSide(side);
+        order.setType(type);
+        order.setTif(tif != null ? tif : TimeInForce.DAY);
+        order.setStatus(OrderStatus.PENDING);
+        order.setQuantity(quantity);
+        order.setRemainingQuantity(quantity);
+        order.setPrice(type == OrderType.MARKET ? null : price);
+
+        order = orderRepo.save(order);
+
+        // Réservation de cash pour BUY LIMIT
+        if (order.getSide() == OrderSide.BUY && order.getType() == OrderType.LIMIT) {
+            BigDecimal amount = order.getPrice().multiply(order.getQuantity());
+            walletService.reserve(playerId, order.getId(), amount, "ORDER_RESERVE");
+        }
+
+        // Mettre à jour le carnet immédiatement pour un LIMIT (même si aucun match n'a lieu)
+        if (order.getType() == OrderType.LIMIT && order.getPrice() != null) {
+            boolean isBid = order.getSide() == OrderSide.BUY;
+            onLimitOrderPlaced(
+                    playerId,
+                    stock.getSymbol(),
+                    isBid,
+                    order.getPrice().doubleValue(),
+                    order.getRemainingQuantity().longValue()
+            );
+        }
+
+        // Matching immédiat sur cet ordre
+        match(order);
+
+        return order;
     }
+
+    /* -------------------------------------------
+       Matching d’un ordre donné
+       ------------------------------------------- */
 
     @Transactional
-    public void cancelOpenOrder(String actor, Long orderId) {
-        Order o = orderRepo.findById(orderId)
-                .orElseThrow(() -> new IllegalArgumentException("Order not found: " + orderId));
-        if (!isOpen(o)) return;
-        o.setStatus(OrderStatus.CANCELLED);
-        orderRepo.save(o);
-        audit.log(actor, "ORDER_CANCELLED", "orderId=" + orderId);
-    }
+    protected void match(Order order) {
+        if (order.getRemainingQuantity() == null ||
+                order.getRemainingQuantity().compareTo(BigDecimal.ZERO) <= 0) {
+            return;
+        }
 
-    /** Ne matche que contre des LIMIT avec prix non nul ; protège les nulls */
-    private void matchLoop(Stock stock, Order taker, String actor) {
-        boolean takerIsBuy = taker.getSide() == OrderSide.BUY;
-        List<Order> book = takerIsBuy
+        Stock stock = order.getStock();
+
+        // Opposite side, status PENDING ou PARTIALLY_FILLED
+        List<Order> candidates = (order.getSide() == OrderSide.BUY)
                 ? orderRepo.findAsksForMatching(stock)
                 : orderRepo.findBidsForMatching(stock);
 
-        for (Order maker : book) {
-            if (!isOpen(taker)) break;
-            if (!isOpen(maker)) continue;
+        for (Order candidate : candidates) {
+            if (order.getRemainingQuantity().compareTo(BigDecimal.ZERO) <= 0) break;
 
-            // Sécurité : ne prendre que LIMIT + prix non nul
-            if (maker.getType() != OrderType.LIMIT || maker.getPrice() == null) continue;
+            if (candidate.getId().equals(order.getId())) continue;
+            if (candidate.getPlayerId().equals(order.getPlayerId())) continue; // pas d’auto-trade
 
-            if (taker.getType() == OrderType.LIMIT) {
-                if (taker.getPrice() == null) continue; // sécurité
-                int cmp = maker.getPrice().compareTo(taker.getPrice());
-                boolean cross = takerIsBuy ? (cmp <= 0) : (cmp >= 0);
-                if (!cross) break;
+            BigDecimal candidatePrice = candidate.getPrice();
+            BigDecimal incomingPrice = order.getPrice();
+
+            boolean pricesMatch = false;
+
+            // Market -> toujours match
+            if (order.getType() == OrderType.MARKET || candidate.getType() == OrderType.MARKET) {
+                pricesMatch = true;
+            } else {
+                if (order.getSide() == OrderSide.BUY) {
+                    // BUY LIMIT match si ask.price <= buy.price
+                    if (candidatePrice != null && incomingPrice != null &&
+                            candidatePrice.compareTo(incomingPrice) <= 0) {
+                        pricesMatch = true;
+                    }
+                } else {
+                    // SELL LIMIT match si bid.price >= sell.price
+                    if (candidatePrice != null && incomingPrice != null &&
+                            candidatePrice.compareTo(incomingPrice) >= 0) {
+                        pricesMatch = true;
+                    }
+                }
             }
 
-            BigDecimal execQty   = min(taker.getRemainingQuantity(), maker.getRemainingQuantity());
-            BigDecimal execPrice = maker.getPrice(); // non null
+            if (!pricesMatch) continue;
 
+            BigDecimal executedPrice = (candidatePrice != null) ? candidatePrice : incomingPrice;
+            if (executedPrice == null) continue;
+
+            BigDecimal qtyToTrade = order.getRemainingQuantity()
+                    .min(candidate.getRemainingQuantity());
+
+            if (qtyToTrade.compareTo(BigDecimal.ZERO) <= 0) continue;
+
+            // Création trade
             Trade trade = Trade.builder()
                     .stock(stock)
-                    .buyOrder(takerIsBuy ? taker : maker)
-                    .sellOrder(takerIsBuy ? maker : taker)
-                    .price(execPrice)
-                    .quantity(execQty)
+                    .buyOrder(order.getSide() == OrderSide.BUY ? order : candidate)
+                    .sellOrder(order.getSide() == OrderSide.SELL ? order : candidate)
+                    .price(executedPrice)
+                    .quantity(qtyToTrade)
                     .build();
-            tradeRepo.save(trade);
 
-            maker.setRemainingQuantity(maker.getRemainingQuantity().subtract(execQty));
-            maker.setStatus(maker.getRemainingQuantity().compareTo(BigDecimal.ZERO) == 0
-                    ? OrderStatus.FILLED : OrderStatus.PARTIALLY_FILLED);
-            orderRepo.save(maker);
+            trade = tradeRepo.save(trade);
 
-            taker.setRemainingQuantity(taker.getRemainingQuantity().subtract(execQty));
-            taker.setStatus(taker.getRemainingQuantity().compareTo(BigDecimal.ZERO) == 0
-                    ? OrderStatus.FILLED : OrderStatus.PARTIALLY_FILLED);
-            orderRepo.save(taker);
+            BigDecimal tradeAmount = trade.getPrice().multiply(trade.getQuantity());
+            Long buyOrderId = trade.getBuyOrder().getId();
+            Long buyerId = trade.getBuyOrder().getPlayerId();
+            Long sellerId = trade.getSellOrder().getPlayerId();
 
-            audit.log(actor, "TRADE_EXECUTED",
-                    "buy=" + (takerIsBuy ? taker.getId() : maker.getId()) +
-                            ", sell=" + (takerIsBuy ? maker.getId() : taker.getId()) +
-                            ", price=" + execPrice + ", qty=" + execQty);
-        }
-    }
-
-    private BigDecimal estimateFillableQty(Stock stock, Order taker) {
-        boolean isBuy = taker.getSide() == OrderSide.BUY;
-        List<Order> book = isBuy ? orderRepo.findAsksForMatching(stock)
-                : orderRepo.findBidsForMatching(stock);
-        BigDecimal need = taker.getRemainingQuantity();
-        BigDecimal acc  = BigDecimal.ZERO;
-
-        for (Order maker : book) {
-            if (maker.getType() != OrderType.LIMIT || maker.getPrice() == null) continue;
-
-            if (taker.getType() == OrderType.LIMIT) {
-                if (taker.getPrice() == null) continue;
-                int cmp = maker.getPrice().compareTo(taker.getPrice());
-                boolean cross = isBuy ? (cmp <= 0) : (cmp >= 0);
-                if (!cross) break;
+            // Consommer la réservation et transférer au vendeur
+            // ⚠️ Vérifier si l'ordre BUY a une réservation (LIMIT orders only)
+            Order buyOrder = trade.getBuyOrder();
+            if (buyOrder.getType() == OrderType.LIMIT) {
+                walletService.consume(buyOrderId, tradeAmount);
             }
-            BigDecimal rest = need.subtract(acc);
-            BigDecimal take = rest.compareTo(maker.getRemainingQuantity()) <= 0 ? rest : maker.getRemainingQuantity();
-            if (take.signum() > 0) acc = acc.add(take);
-            if (acc.compareTo(need) >= 0) break;
+            walletService.transfer(buyerId, sellerId, tradeAmount);
+
+            // MAJ des quantités et statuts
+            order.setRemainingQuantity(order.getRemainingQuantity().subtract(qtyToTrade));
+            candidate.setRemainingQuantity(candidate.getRemainingQuantity().subtract(qtyToTrade));
+
+            if (order.getRemainingQuantity().compareTo(BigDecimal.ZERO) == 0) {
+                order.setStatus(OrderStatus.FILLED);
+            } else {
+                order.setStatus(OrderStatus.PARTIALLY_FILLED);
+            }
+
+            if (candidate.getRemainingQuantity().compareTo(BigDecimal.ZERO) == 0) {
+                candidate.setStatus(OrderStatus.FILLED);
+            } else {
+                candidate.setStatus(OrderStatus.PARTIALLY_FILLED);
+            }
+
+            orderRepo.save(candidate);
+            orderRepo.save(order);
+
+            // MAJ carnet par recalcul DB (candidats + ordre entrant)
+            if (candidate.getPrice() != null) {
+                boolean isBid = candidate.getSide() == OrderSide.BUY;
+                orderBookService.recomputeLevelFromDb(
+                        stock.getSymbol(),
+                        isBid,
+                        candidate.getPrice().doubleValue()
+                );
+            }
+
+            if (order.getPrice() != null) {
+                boolean isBidIncoming = order.getSide() == OrderSide.BUY;
+                orderBookService.recomputeLevelFromDb(
+                        stock.getSymbol(),
+                        isBidIncoming,
+                        order.getPrice().doubleValue()
+                );
+            }
+
+            onTradeExecuted(buyerId, sellerId, stock.getSymbol(), executedPrice.doubleValue());
+            
+            // Vérifier les alertes de prix après chaque transaction
+            log.info("🔔 Vérification des alertes pour {} @ {}", stock.getSymbol(), executedPrice);
+            priceAlertMonitorService.checkAlertsForSymbol(stock.getSymbol(), executedPrice);
+            log.info("✅ Vérification des alertes terminée");
         }
-        return acc;
     }
 
-    private static BigDecimal min(BigDecimal a, BigDecimal b){ return a.compareTo(b) <= 0 ? a : b; }
-    private static boolean isOpen(Order o){
-        return o.getStatus()==OrderStatus.PENDING || o.getStatus()==OrderStatus.PARTIALLY_FILLED;
+    /* -------------------------------------------
+       Matching par symbole (utilisé par le scheduler)
+       ------------------------------------------- */
+
+    @Transactional
+    public void matchSymbol(String symbol) {
+        Stock stock = stockRepo.findBySymbol(symbol)
+                .orElseThrow(() -> new IllegalArgumentException("Unknown symbol: " + symbol));
+
+        // Backfill des réservations pour BUY LIMIT
+        List<Order> buyOrders = orderRepo
+                .findByStockAndSideAndStatusInOrderByPriceDescCreatedAtAsc(
+                        stock,
+                        OrderSide.BUY,
+                        List.of(OrderStatus.PENDING, OrderStatus.PARTIALLY_FILLED)
+                );
+
+        for (Order b : buyOrders) {
+            if (b.getType() == OrderType.LIMIT) {
+                try {
+                    BigDecimal amount = b.getPrice().multiply(b.getRemainingQuantity());
+                    walletService.reserve(b.getPlayerId(), b.getId(), amount, "BACKFILL_RESERVE");
+                } catch (Exception ex) {
+                    // si échec de réservation -> on ignore
+                }
+            }
+        }
+
+        List<OrderStatus> open = List.of(OrderStatus.PENDING, OrderStatus.PARTIALLY_FILLED);
+
+        // Bids desc
+        List<Order> orders = orderRepo
+                .findByStockAndSideAndStatusInOrderByPriceDescCreatedAtAsc(stock, OrderSide.BUY, open);
+        // Asks asc
+        orders.addAll(
+                orderRepo.findByStockAndSideAndStatusInOrderByPriceAscCreatedAtAsc(stock, OrderSide.SELL, open)
+        );
+
+        for (Order o : orders) {
+            orderRepo.findById(o.getId()).ifPresent(this::match);
+        }
+    }
+
+    /* -------------------------------------------
+       Scheduler global : scan des symboles
+       ------------------------------------------- */
+
+    @Scheduled(fixedDelayString = "${matching.scan.delay:5000}")
+    public void scheduledMatchScan() {
+        List<OrderStatus> open = List.of(OrderStatus.PENDING, OrderStatus.PARTIALLY_FILLED);
+
+        // On récupère tous les ordres ouverts
+        List<Order> openOrders = orderRepo.findByStatusIn(open);
+
+        // On en déduit les symboles uniques
+        Set<String> symbols = openOrders.stream()
+                .filter(o -> o.getStock() != null)
+                .map(o -> o.getStock().getSymbol())
+                .collect(Collectors.toSet());
+
+        for (String symbol : symbols) {
+            try {
+                matchSymbol(symbol);
+            } catch (Exception ex) {
+                // en prod -> logger
+            }
+        }
+    }
+
+    /* -------------------------------------------
+       Annulation d’un ordre
+       ------------------------------------------- */
+
+    @Transactional
+    public void cancelOpenOrder(Long playerId, Long orderId) {
+        Order order = orderRepo.findById(orderId)
+                .orElseThrow(() -> new IllegalArgumentException("Order not found: " + orderId));
+
+        if (!playerId.equals(order.getPlayerId())) {
+            throw new IllegalArgumentException("Order " + orderId + " does not belong to player " + playerId);
+        }
+
+        if (order.getStatus() != OrderStatus.PENDING &&
+                order.getStatus() != OrderStatus.PARTIALLY_FILLED) {
+            throw new IllegalArgumentException("Order " + orderId + " is not open and cannot be cancelled");
+        }
+
+        order.setStatus(OrderStatus.CANCELLED);
+        orderRepo.save(order);
     }
 }

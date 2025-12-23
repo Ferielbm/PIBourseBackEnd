@@ -9,8 +9,6 @@ import java.util.List;
 
 public interface PriceAlertRepository extends JpaRepository<PriceAlert, Long> {
     List<PriceAlert> findByPlayerIdOrderByCreatedAtDesc(Long playerId);
-
-    List<PriceAlert> findByPlayerIdAndStatusOrderByCreatedAtDesc(Long playerId, PriceAlertStatus status);
-
-
+    
+    List<PriceAlert> findBySymbolAndStatus(String symbol, PriceAlertStatus status);
 }

@@ -1,15 +1,16 @@
-// src/main/java/tn/esprit/piboursebackend/Order/Service/WalletService.java
 package tn.esprit.piboursebackend.Order.Service;
 
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 import tn.esprit.piboursebackend.Order.Entity.WalletReservation;
 import tn.esprit.piboursebackend.Order.Entity.WalletReservationStatus;
 import tn.esprit.piboursebackend.Order.Repository.WalletReservationRepository;
+import tn.esprit.piboursebackend.Player.Entities.Player;
 import tn.esprit.piboursebackend.Player.Entities.Wallet;
+import tn.esprit.piboursebackend.Player.Repositories.PlayerRepository;
 import tn.esprit.piboursebackend.Player.Repositories.WalletRepository;
 
 import java.math.BigDecimal;
@@ -20,29 +21,44 @@ public class WalletService {
 
     private final WalletRepository walletRepo;
     private final WalletReservationRepository reservationRepo;
+    private final PlayerRepository playerRepo;
 
-    /** Solde réellement dispo = balance - réservations actives */
-    @Transactional
-    public BigDecimal getAvailable(Long playerId){
+    private BigDecimal safeActiveReserved(Long playerId) {
+        BigDecimal reserved = reservationRepo.sumActiveRemainingByPlayerId(playerId);
+        return reserved != null ? reserved : BigDecimal.ZERO;
+    }
+
+    /**
+     * Solde réellement dispo = balance - réservations actives
+     */
+    @Transactional(readOnly = true)
+    public BigDecimal getAvailable(Long playerId) {
         Wallet w = walletRepo.findByPlayer_Id(playerId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "wallet not found"));
-        BigDecimal reserved = reservationRepo.sumActiveRemainingByPlayerId(playerId);
+
+        BigDecimal reserved = safeActiveReserved(playerId);
         return w.getBalance().subtract(reserved);
     }
 
-    /** Réserver (ex: BUY LIMIT price*qty) */
+    /**
+     * Réserver (ex: BUY LIMIT price * qty)
+     */
     @Transactional
-    public WalletReservation reserve(Long playerId, Long orderId, BigDecimal amount, String reason){
-        if (amount == null || amount.signum() <= 0)
+    public WalletReservation reserve(Long playerId, Long orderId, BigDecimal amount, String reason) {
+        if (amount == null || amount.signum() <= 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "reserve amount must be > 0");
+        }
 
-        // lock wallet
-        Wallet w = walletRepo.findByPlayer_Id(playerId)
+        // 🔒 On verrouille le wallet en écriture pour éviter les races
+        Wallet w = walletRepo.findByPlayerIdForUpdate(playerId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "wallet not found"));
 
-        BigDecimal available = w.getBalance().subtract(reservationRepo.sumActiveRemainingByPlayerId(playerId));
-        if (available.compareTo(amount) < 0)
+        BigDecimal reserved = safeActiveReserved(playerId);
+        BigDecimal available = w.getBalance().subtract(reserved);
+
+        if (available.compareTo(amount) < 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "insufficient funds");
+        }
 
         WalletReservation r = WalletReservation.builder()
                 .playerId(playerId)
@@ -52,67 +68,95 @@ public class WalletService {
                 .status(WalletReservationStatus.ACTIVE)
                 .reason(reason)
                 .build();
+
         return reservationRepo.save(r);
     }
 
-    /** Consommer la réservation (ex: trade exécuté) */
+    /**
+     * Consommer la réservation (ex: trade exécuté) – on consomme le montant dans les réservations
+     */
     @Transactional
-    public void consume(Long orderId, BigDecimal amount){
-        if (amount == null || amount.signum() <= 0)
+    public void consume(Long orderId, BigDecimal amount) {
+        if (amount == null || amount.signum() <= 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "consume amount must be > 0");
+        }
 
-        // lock réservations actives de l’ordre
+        // 🔒 On lock les réservations actives de l’ordre
         var actives = reservationRepo.lockAllActiveByOrderId(orderId);
-        if (actives.isEmpty())
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "no active reservation for order "+orderId);
+        if (actives.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "no active reservation for order " + orderId);
+        }
 
         BigDecimal remaining = amount;
-        for (var r : actives){
+
+        for (WalletReservation r : actives) {
             if (remaining.signum() <= 0) break;
+
             BigDecimal take = r.getRemainingAmount().min(remaining);
+            if (take.signum() <= 0) {
+                continue;
+            }
+
             r.setRemainingAmount(r.getRemainingAmount().subtract(take));
             remaining = remaining.subtract(take);
-            if (r.getRemainingAmount().signum() == 0){
+
+            if (r.getRemainingAmount().signum() == 0) {
                 r.setStatus(WalletReservationStatus.CONSUMED);
             }
+
             reservationRepo.save(r);
         }
-        if (remaining.signum() > 0)
+
+        if (remaining.signum() > 0) {
+            // On a voulu consommer plus que ce qui est réservé
             throw new ResponseStatusException(HttpStatus.CONFLICT, "reservation underflow");
+        }
     }
 
-    /** Libérer intégralement (ex: annulation d’ordre) */
+    /**
+     * Libérer intégralement (ex: annulation d’ordre)
+     */
     @Transactional
-    public void releaseAllForOrder(Long orderId){
+    public void releaseAllForOrder(Long orderId) {
         var actives = reservationRepo.lockAllActiveByOrderId(orderId);
-        for (var r : actives){
+        for (WalletReservation r : actives) {
             r.setStatus(WalletReservationStatus.RELEASED);
             r.setRemainingAmount(BigDecimal.ZERO);
             reservationRepo.save(r);
         }
     }
 
-    /** Créditer/Débiter cash (virement final vers vendeur) */
+    /**
+     * Créditer le vendeur après exécution d'un trade
+     * IMPORTANT: l'acheteur a déjà "payé" via la réservation consommée (consume)
+     * Cette méthode ne doit pas toucher aux réservations et ne sert qu'à créditer le vendeur.
+     */
     @Transactional
-    public void transfer(Long fromPlayerId, Long toPlayerId, BigDecimal amount){
-        if (amount == null || amount.signum() <= 0)
+    public void transfer(Long buyerId, Long sellerId, BigDecimal amount) {
+        if (amount == null || amount.signum() <= 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "transfer amount must be > 0");
+        }
 
-        Wallet from = walletRepo.findByPlayerIdForUpdate(fromPlayerId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "wallet not found: buyer"));
-        Wallet to = walletRepo.findByPlayerIdForUpdate(toPlayerId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "wallet not found: seller"));
+        // On verrouille seulement le wallet du vendeur pour le créditer
+        Wallet seller = walletRepo.findByPlayerIdForUpdate(sellerId).orElse(null);
 
-        // Ici on suppose que le “cash réel” est déjà réservé côté acheteur,
-        // donc on débite seulement du “réservé” (consume) puis on crédite le vendeur.
-        // Si tu veux impacter balance directement, décommente :
-        // if (from.getBalance().compareTo(amount) < 0) throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"insufficient");
-        // from.setBalance(from.getBalance().subtract(amount));
-        to.setBalance(to.getBalance().add(amount));
+        if (seller == null) {
+            System.err.println("⚠️ Wallet non trouvé pour le vendeur (playerId=" + sellerId + "). Création automatique...");
+            Player sellerPlayer = playerRepo.findById(sellerId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Player not found: " + sellerId));
+            seller = Wallet.builder()
+                    .player(sellerPlayer)
+                    .balance(BigDecimal.ZERO)
+                    .totalDeposits(BigDecimal.ZERO)
+                    .totalWithdrawals(BigDecimal.ZERO)
+                    .build();
+            seller = walletRepo.save(seller);
+            System.out.println("✅ Wallet créé pour le vendeur (playerId=" + sellerId + ")");
+        }
 
-        // NB: le débit réel du buyer est implicitement “effectué” par la consommation de réservation + éventuellement
-        // un ajustement du solde si tu veux le matérialiser (à toi de décider la stratégie comptable).
-        walletRepo.save(from);
-        walletRepo.save(to);
+        // 💰 Créditer uniquement le vendeur — le débit acheteur est pris en compte via la réservation consommée
+        seller.setBalance(seller.getBalance().add(amount));
+        walletRepo.save(seller);
+        System.out.println("💸 Transfer crédit vendeur: " + amount + "€ -> seller=" + sellerId);
     }
 }

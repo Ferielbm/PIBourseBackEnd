@@ -16,18 +16,38 @@ public class ScheduledOrderQueryController {
 
     private final ScheduledOrderRepository repo;
 
-    // GET /api/players/1/scheduled-orders?status=PENDING
-    // GET /api/players/1/scheduled-orders?status=PENDING&symbol=TSLA
+
     @GetMapping("/scheduled-orders")
     public List<ScheduledOrder> list(
             @PathVariable Long playerId,
-            @RequestParam(defaultValue = "PENDING") ScheduledOrderStatus status,
+            @RequestParam(required = false) String status, // accepte PENDING / TRIGGERED / CANCELLED / FAILED / ALL / (null)
             @RequestParam(required = false) String symbol
     ) {
-        if (symbol == null || symbol.isBlank()) {
-            return repo.findByPlayerIdAndStatusOrderByCreatedAtAsc(playerId, status);
+        ScheduledOrderStatus effectiveStatus = null;
+        if (status != null && !status.isBlank() && !status.equalsIgnoreCase("ALL")) {
+            try {
+                effectiveStatus = ScheduledOrderStatus.valueOf(status.toUpperCase());
+            } catch (IllegalArgumentException ignored) {
+                // statut inconnu -> on ignore et on retourne tout
+            }
+        }
+
+        boolean hasSymbol = symbol != null && !symbol.isBlank();
+
+        if (effectiveStatus == null) {
+            // Pas de filtre status -> on renvoie tout
+            if (!hasSymbol) {
+                return repo.findByPlayerIdOrderByCreatedAtAsc(playerId);
+            } else {
+                return repo.findByPlayerIdAndDesiredSymbolOrderByCreatedAtAsc(playerId, symbol);
+            }
         } else {
-            return repo.findByPlayerIdAndStatusAndDesiredSymbolOrderByCreatedAtAsc(playerId, status, symbol);
+            // Filtre sur un statut précis
+            if (!hasSymbol) {
+                return repo.findByPlayerIdAndStatusOrderByCreatedAtAsc(playerId, effectiveStatus);
+            } else {
+                return repo.findByPlayerIdAndStatusAndDesiredSymbolOrderByCreatedAtAsc(playerId, effectiveStatus, symbol);
+            }
         }
     }
 }

@@ -19,14 +19,20 @@ public class RestExceptionHandler {
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String,Object>> handleIAE(IllegalArgumentException ex){
+        ex.printStackTrace();
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(Map.of("error", ex.getMessage()));
     }
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<Map<String,Object>> handleAny(Exception ex){
-        // log.ex.printStackTrace(); // en DEV
+        ex.printStackTrace(); // Log la stacktrace pour debug
+        System.err.println("❌ Exception: " + ex.getClass().getName() + " - " + ex.getMessage());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(Map.of("error", ex.getMessage()));
+                .body(Map.of(
+                    "error", ex.getMessage() != null ? ex.getMessage() : "Internal Server Error",
+                    "type", ex.getClass().getSimpleName()
+                ));
     }
 }
+

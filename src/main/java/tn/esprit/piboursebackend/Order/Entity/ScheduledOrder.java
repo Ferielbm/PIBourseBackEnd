@@ -90,6 +90,9 @@ public class ScheduledOrder {
     @Column(name = "triggered_at")
     private LocalDateTime triggeredAt;
 
+    @Column(name = "executed_order_id")
+    private Long executedOrderId; // ordre réel placé si EXECUTED
+
     @PrePersist
     void onCreate(){
         if (approachCooldownMinutes == null) approachCooldownMinutes = 60;

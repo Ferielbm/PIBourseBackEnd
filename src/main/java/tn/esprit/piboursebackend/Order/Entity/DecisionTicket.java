@@ -52,4 +52,10 @@ public class DecisionTicket {
     private LocalDateTime createdAt;
 
     private LocalDateTime decidedAt;  // rempli quand accepté/rejeté
+
+        @Column(name = "scheduled_order_id")
+        private Long scheduledOrderId; // lien vers le scheduled order source
+
+        @Column(name = "placed_order_id")
+        private Long placedOrderId; // ordre créé après acceptation
 }

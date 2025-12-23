@@ -1,3 +1,4 @@
+// tn/esprit/piboursebackend/Order/Repository/WalletReservationRepository.java
 package tn.esprit.piboursebackend.Order.Repository;
 
 import jakarta.persistence.LockModeType;
@@ -15,8 +16,12 @@ import java.util.Optional;
 @Repository
 public interface WalletReservationRepository extends JpaRepository<WalletReservation, Long> {
 
-    @Query("select coalesce(sum(r.remainingAmount),0) from WalletReservation r " +
-            "where r.playerId = :playerId and r.status = tn.esprit.piboursebackend.Order.Entity.WalletReservationStatus.ACTIVE")
+    @Query("""
+           select coalesce(sum(r.remainingAmount), 0)
+           from WalletReservation r
+           where r.playerId = :playerId
+             and r.status = tn.esprit.piboursebackend.Order.Entity.WalletReservationStatus.ACTIVE
+           """)
     BigDecimal sumActiveRemainingByPlayerId(Long playerId);
 
     List<WalletReservation> findByPlayerIdAndStatus(Long playerId, WalletReservationStatus status);
@@ -24,6 +29,11 @@ public interface WalletReservationRepository extends JpaRepository<WalletReserva
     Optional<WalletReservation> findFirstByOrderIdAndStatus(Long orderId, WalletReservationStatus status);
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("select r from WalletReservation r where r.orderId = :orderId and r.status = tn.esprit.piboursebackend.Order.Entity.WalletReservationStatus.ACTIVE")
+    @Query("""
+           select r
+           from WalletReservation r
+           where r.orderId = :orderId
+             and r.status = tn.esprit.piboursebackend.Order.Entity.WalletReservationStatus.ACTIVE
+           """)
     List<WalletReservation> lockAllActiveByOrderId(Long orderId);
 }

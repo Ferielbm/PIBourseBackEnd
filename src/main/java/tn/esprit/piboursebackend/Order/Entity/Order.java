@@ -10,36 +10,54 @@ import java.math.RoundingMode;
 import java.time.LocalDateTime;
 
 @Entity
-@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
-@Table(name = "orders",
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+@Table(
+        name = "orders",
         indexes = {
-                @Index(name = "idx_order_stock_side_price_created", columnList = "stock_id,side,price,createdAt"),
-                @Index(name = "idx_order_stock_status", columnList = "stock_id,status")
-        })
+                @Index(name = "idx_order_stock_side_price_created",
+                        columnList = "stock_id,side,price,createdAt"),
+                @Index(name = "idx_order_stock_status",
+                        columnList = "stock_id,status"),
+                @Index(name = "idx_order_player_id",
+                        columnList = "playerId,id")
+        }
+)
 public class Order {
 
- @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+ @Id
+ @GeneratedValue(strategy = GenerationType.IDENTITY)
  private Long id;
 
  @Version
  private Long version;
+
+ @Column(nullable = false)
+ private Long playerId;
 
  @ManyToOne(optional = false, fetch = FetchType.LAZY)
  @JoinColumn(name = "stock_id", nullable = false)
  @JsonIgnore
  private Stock stock;
 
- @Enumerated(EnumType.STRING) @Column(nullable = false, length = 10)
+ @Enumerated(EnumType.STRING)
+ @Column(nullable = false, length = 10)
  private OrderType type; // MARKET / LIMIT
 
- @Enumerated(EnumType.STRING) @Column(nullable = false, length = 5)
+ @Enumerated(EnumType.STRING)
+ @Column(nullable = false, length = 5)
  private OrderSide side; // BUY / SELL
 
- @Enumerated(EnumType.STRING) @Column(nullable = false, length = 10)
+ @Enumerated(EnumType.STRING)
+ @Column(nullable = false, length = 10)
  @Builder.Default
  private TimeInForce tif = TimeInForce.DAY; // DAY/GTC/IOC/FOK
 
- @Enumerated(EnumType.STRING) @Column(nullable = false, length = 20)
+ @Enumerated(EnumType.STRING)
+ @Column(nullable = false, length = 20)
  @Builder.Default
  private OrderStatus status = OrderStatus.PENDING;
 
@@ -62,6 +80,7 @@ public class Order {
  void onCreate() {
   if (createdAt == null) createdAt = LocalDateTime.now();
   updatedAt = createdAt;
+
   if (status == null) status = OrderStatus.PENDING;
   if (tif == null) tif = TimeInForce.DAY;
 

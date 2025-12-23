@@ -33,6 +33,7 @@ public class Portfolio {
     private Stock stock;
     // ✅ Correct: One portfolio can have many positions
     @OneToMany(mappedBy = "portfolio", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private List<Position> positions = new ArrayList<>();
 
     public BigDecimal calculateTotalValue() {

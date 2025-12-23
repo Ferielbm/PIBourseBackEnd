@@ -22,17 +22,16 @@ public class PriceAlertService {
     private final MatchingEngineService engine;   // pour placer un ordre si un ticket est accepté
     private final AuditLogService audit;          // pour historiser
 
-    // -------------- ALERTES --------------
+    // -------- ALERTES --------
 
-    /**
-     * Crée une alerte de prix [min,max] pour un player/symbole.
-     * Status par défaut : ACTIVE.
-     */
     @Transactional
     public PriceAlert createAlert(Long playerId, String symbol, BigDecimal min, BigDecimal max) {
-        if (playerId == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "playerId is required");
-        if (symbol == null || symbol.isBlank()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "symbol is required");
-        if (min == null && max == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "min or max required");
+        if (playerId == null)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "playerId is required");
+        if (symbol == null || symbol.isBlank())
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "symbol is required");
+        if (min == null && max == null)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "min or max required");
         if (min != null && max != null && min.compareTo(max) > 0)
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "min must be <= max");
 
@@ -44,7 +43,6 @@ public class PriceAlertService {
                 .minPrice(min)
                 .maxPrice(max)
                 .status(PriceAlertStatus.ACTIVE)
-                .playerId(playerId)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
@@ -59,13 +57,19 @@ public class PriceAlertService {
         return alert;
     }
 
-    /**
-     * Change le statut d’une alerte (ACTIVE / PAUSED / CANCELLED).
-     */
+    @Transactional(readOnly = true)
+    public List<PriceAlert> listAlertsForPlayer(Long playerId) {
+        if (playerId == null)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "playerId is required");
+        return alertRepo.findByPlayerIdOrderByCreatedAtDesc(playerId);
+    }
+
     @Transactional
     public void setStatus(Long alertId, PriceAlertStatus status, Long actorPlayerId) {
-        if (alertId == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "alertId is required");
-        if (status == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "status is required");
+        if (alertId == null)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "alertId is required");
+        if (status == null)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "status is required");
 
         PriceAlert alert = alertRepo.findById(alertId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "alert not found"));
@@ -79,31 +83,32 @@ public class PriceAlertService {
                 "alertId=" + alert.getId() + ", status=" + status.name());
     }
 
-    // -------------- TICKETS : LISTE --------------
+    @Transactional
+    public void deleteAlert(Long alertId, Long actorPlayerId) {
+        if (alertId == null)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "alertId is required");
 
-    /**
-     * Retourne tous les tickets (tous statuts) d’un joueur, les plus récents d’abord.
-     */
+        PriceAlert alert = alertRepo.findById(alertId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "alert not found"));
+
+        alertRepo.delete(alert);
+
+        String actor = (actorPlayerId != null) ? "user:" + actorPlayerId : "system";
+        audit.log(actor, "ALERT_DELETED", "alertId=" + alertId);
+    }
+
+    // -------- TICKETS (inchangé, utilisé par ton système) --------
+
     @Transactional(readOnly = true)
     public List<DecisionTicket> listTicketsForPlayer(Long playerId) {
         return ticketRepo.findByPlayerIdOrderByCreatedAtDesc(playerId);
     }
 
-    /**
-     * Retourne les tickets d’un joueur filtrés par statut (PENDING/ACCEPTED/REJECTED).
-     */
     @Transactional(readOnly = true)
     public List<DecisionTicket> listTicketsForPlayerByStatus(Long playerId, DecisionStatus status) {
         return ticketRepo.findByPlayerIdAndStatusOrderByCreatedAtDesc(playerId, status);
     }
 
-    // -------------- TICKETS : DECIDE --------------
-
-    /**
-     * Décider un ticket. Si accept=false -> REJECTED.
-     * Si accept=true -> on place un LIMIT order au prix proposé du ticket (foundPrice),
-     * quantité = body.quantity si >0 sinon suggestedQuantity du ticket.
-     */
     @Transactional
     public DecisionTicket decide(Long ticketId, boolean accept, BigDecimal quantity) {
         DecisionTicket t = ticketRepo.findById(ticketId)
@@ -113,7 +118,7 @@ public class PriceAlertService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Ticket not pending");
         }
 
-        String actor = "user:" + t.getPlayerId(); // l’acteur = propriétaire du ticket
+        String actor = "user:" + t.getPlayerId();
 
         if (!accept) {
             t.setStatus(DecisionStatus.REJECTED);
@@ -123,7 +128,6 @@ public class PriceAlertService {
             return t;
         }
 
-        // accept => on place un ordre LIMIT
         BigDecimal q = (quantity != null && quantity.signum() > 0) ? quantity : t.getSuggestedQuantity();
         if (q == null || q.signum() <= 0) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "quantity must be > 0");
@@ -132,9 +136,10 @@ public class PriceAlertService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "ticket has no price to place order");
         }
 
-        OrderSide side = (t.getSide() != null) ? t.getSide() : OrderSide.BUY; // défaut BUY si non renseigné
+        OrderSide side = (t.getSide() != null) ? t.getSide() : OrderSide.BUY;
+
         var order = engine.placeOrder(
-                actor,
+                t.getPlayerId(),
                 t.getSymbol(),
                 side,
                 OrderType.LIMIT,
@@ -153,12 +158,6 @@ public class PriceAlertService {
         return t;
     }
 
-    // -------------- Helper (optionnel) --------------
-
-    /**
-     * Helper pour créer un ticket (si tu veux déclencher un ticket depuis un autre service).
-     * reason : IN_RANGE, APPROACHING_MIN, etc.
-     */
     @Transactional
     public DecisionTicket createTicket(Long playerId,
                                        String symbol,
@@ -166,9 +165,12 @@ public class PriceAlertService {
                                        BigDecimal foundPrice,
                                        BigDecimal suggestedQty,
                                        TicketReason reason) {
-        if (playerId == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "playerId is required");
-        if (symbol == null || symbol.isBlank()) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "symbol is required");
-        if (foundPrice == null) throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "foundPrice is required");
+        if (playerId == null)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "playerId is required");
+        if (symbol == null || symbol.isBlank())
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "symbol is required");
+        if (foundPrice == null)
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "foundPrice is required");
 
         DecisionTicket t = DecisionTicket.builder()
                 .playerId(playerId)
