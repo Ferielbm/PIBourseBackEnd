@@ -1,0 +1,23 @@
+/* Market component styles */
+
+:host {
+  position: relative;
+  z-index: 1;
+}
+
+input[type="number"],
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"][type=number] {
+  -moz-appearance: textfield;
+}

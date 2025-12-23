@@ -1,0 +1,60 @@
+:host {
+  display: block;
+}
+
+/* LIGHT MODE */
+.scheduled-orders-list {
+  background: #f9fafb;
+  border-radius: 12px;
+  padding: 1rem;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+table thead {
+  background: #111827;
+  color: #f9fafb;
+}
+
+th, td {
+  padding: 0.7rem;
+  border: 1px solid #e5e7eb;
+}
+
+tbody tr:nth-child(even) {
+  background: #f3f4f6;
+}
+
+/* DARK MODE */
+:host-context(.dark) .scheduled-orders-list,
+:host-context(.dark-mode) .scheduled-orders-list {
+  background: #0f172a;
+}
+
+:host-context(.dark) table thead,
+:host-context(.dark-mode) table thead {
+  background: #1e293b;
+  color: #e5e7eb;
+}
+
+:host-context(.dark) th, 
+:host-context(.dark) td,
+:host-context(.dark-mode) th,
+:host-context(.dark-mode) td {
+  border-color: #1f2937;
+  color: #e5e7eb;
+}
+
+:host-context(.dark) tbody tr:nth-child(even),
+:host-context(.dark-mode) tbody tr:nth-child(even) {
+  background: #1e293b;
+}
+
+:host-context(.dark) tbody tr:nth-child(odd),
+:host-context(.dark-mode) tbody tr:nth-child(odd) {
+  background: #0f172a;
+}

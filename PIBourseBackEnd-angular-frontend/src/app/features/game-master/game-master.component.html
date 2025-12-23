@@ -1,0 +1,410 @@
+<div class="min-h-screen bg-gray-50 dark:bg-gray-950 p-4">
+  <!-- Header moderne -->
+  <div class="mb-6">
+    <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center gap-3">
+        <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-2xl">
+          🎮
+        </div>
+        <div>
+          <h1 class="text-2xl font-bold text-gray-900 dark:text-gray-50">Meneur de Jeu</h1>
+          <p class="text-sm text-gray-600 dark:text-gray-400">Gestion du Carnet d'Ordres</p>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <a 
+          routerLink="/game-master/price-history"
+          class="px-4 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition font-medium text-sm">
+          📊 Historique des Prix
+        </a>
+      </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+      <div class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-xl">
+            📋
+          </div>
+          <div class="flex-1">
+            <p class="text-xs text-gray-600 dark:text-gray-400">Ordres Actifs</p>
+            <p class="text-xl font-bold text-gray-900 dark:text-gray-50">{{ formatNumber(stats.totalOrders) }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-xl">
+            📊
+          </div>
+          <div class="flex-1">
+            <p class="text-xs text-gray-600 dark:text-gray-400">Volume Total</p>
+            <p class="text-xl font-bold text-gray-900 dark:text-gray-50">{{ formatNumber(stats.totalVolume) }}</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center text-xl">
+            🔥
+          </div>
+          <div class="flex-1">
+            <p class="text-xs text-gray-600 dark:text-gray-400">Plus Échangé</p>
+            <p class="text-xl font-bold text-gray-900 dark:text-gray-50">{{ stats.mostTradedSymbol || '-' }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Liste de TOUS les ordres -->
+  <div class="mb-6">
+    <div class="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-50 flex items-center gap-2">
+          <span class="text-lg">📋</span>
+          Tous les Ordres ({{ allOrders.length }})
+        </h3>
+        
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead class="border-b border-gray-200 dark:border-gray-800">
+            <tr class="text-left">
+              <th class="px-3 py-2 font-semibold text-gray-900 dark:text-gray-50">ID</th>
+              <th class="px-3 py-2 font-semibold text-gray-900 dark:text-gray-50">Joueur</th>
+              <th class="px-3 py-2 font-semibold text-gray-900 dark:text-gray-50">Symbole</th>
+              <th class="px-3 py-2 font-semibold text-gray-900 dark:text-gray-50">Type</th>
+              <th class="px-3 py-2 font-semibold text-gray-900 dark:text-gray-50 text-right">Prix</th>
+              <th class="px-3 py-2 font-semibold text-gray-900 dark:text-gray-50 text-right">Quantité</th>
+              <th class="px-3 py-2 font-semibold text-gray-900 dark:text-gray-50 text-right">Restant</th>
+              <th class="px-3 py-2 font-semibold text-gray-900 dark:text-gray-50">Statut</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-200 dark:divide-gray-800">
+            <tr *ngFor="let order of allOrders" class="hover:bg-gray-50 dark:hover:bg-gray-800/50 transition">
+              <td class="px-3 py-2 text-gray-600 dark:text-gray-400">{{ order.id }}</td>
+              <td class="px-3 py-2 text-gray-900 dark:text-gray-50">{{ order.player.username || 'Player ' + order.playerId }}</td>
+              <td class="px-3 py-2">
+                <span class="px-2 py-1 rounded bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 font-medium">
+                  {{ order.stock.symbol || 'Stock ' + order.stockId }}
+                </span>
+              </td>
+              <td class="px-3 py-2">
+                <span 
+                  [class]="order.side === 'BUY' ? 'px-2 py-1 rounded bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 font-medium' : 'px-2 py-1 rounded bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 font-medium'">
+                  {{ order.side === 'BUY' ? '📈 ACHAT' : '📉 VENTE' }}
+                </span>
+              </td>
+              <td class="px-3 py-2 text-right text-gray-900 dark:text-gray-50 font-medium">
+                {{ order.price ? formatPrice(order.price) + '€' : 'MARKET' }}
+              </td>
+              <td class="px-3 py-2 text-right text-gray-700 dark:text-gray-300">{{ formatNumber(order.quantity) }}</td>
+              <td class="px-3 py-2 text-right text-gray-700 dark:text-gray-300">{{ formatNumber(order.remainingQuantity) }}</td>
+              <td class="px-3 py-2">
+                <span 
+                  [class]="order.status === 'PENDING' ? 'px-2 py-1 rounded bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 text-xs font-medium' : order.status === 'FILLED' ? 'px-2 py-1 rounded bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-medium' : 'px-2 py-1 rounded bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-400 text-xs font-medium'">
+                  {{ order.status }}
+                </span>
+              </td>
+            </tr>
+            <tr *ngIf="allOrders.length === 0 && !allOrdersLoading">
+              <td colspan="8" class="px-3 py-8 text-center text-gray-500 dark:text-gray-400">
+                Aucun ordre trouvé
+              </td>
+            </tr>
+            <tr *ngIf="allOrdersLoading">
+              <td colspan="8" class="px-3 py-8 text-center text-gray-500 dark:text-gray-400">
+                ⏳ Chargement des ordres...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid xl:grid-cols-3 gap-4">
+    <!-- Panneau de contrôle -->
+    <div class="space-y-4">
+      <!-- Sélection du symbole -->
+      <div class="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+        <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-50 mb-3 flex items-center gap-2">
+          <span class="text-lg">📊</span>
+          Symbole
+        </h3>
+        <select 
+          [(ngModel)]="selectedSymbol" 
+          (change)="onSymbolChange(selectedSymbol)"
+          class="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm">
+          <option *ngFor="let stock of symbols" [value]="stock.symbol">
+            {{ stock.symbol }} - {{ stock.name }}
+          </option>
+        </select>
+        <div *ngIf="currentMarketPrice > 0" class="mt-2 p-2 rounded-lg bg-blue-50 dark:bg-blue-900/20">
+          <p class="text-xs text-gray-600 dark:text-gray-400">Prix du marché actuel</p>
+          <p class="text-lg font-bold text-blue-600 dark:text-blue-400">{{ formatPrice(currentMarketPrice) }}€</p>
+        </div>
+      </div>
+
+      <!-- Injection d'ordres fictifs -->
+      <!-- Injection d'ordres fictifs -->
+      <div class="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+        <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-50 mb-3 flex items-center gap-2">
+          <span class="text-lg">🤖</span>
+          Ordre Fictif Massif
+        </h3>
+
+        <div class="space-y-3">
+          <div>
+            <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1">Type</label>
+            <div class="grid grid-cols-2 gap-2">
+              <button 
+                [class]="fictiveOrderForm.side === 'BUY' ? 'px-3 py-2 rounded-lg text-sm font-semibold bg-emerald-600 text-white' : 'px-3 py-2 rounded-lg text-sm font-semibold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'"
+                (click)="fictiveOrderForm.side = 'BUY'">
+                📈 ACHAT
+              </button>
+              <button 
+                [class]="fictiveOrderForm.side === 'SELL' ? 'px-3 py-2 rounded-lg text-sm font-semibold bg-red-600 text-white' : 'px-3 py-2 rounded-lg text-sm font-semibold bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700'"
+                (click)="fictiveOrderForm.side = 'SELL'">
+                📉 VENTE
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1">Quantité</label>
+            <input 
+              type="number" 
+              [(ngModel)]="fictiveOrderForm.quantity"
+              min="1"
+              step="100"
+              class="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm">
+          </div>
+
+          <div>
+            <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1">Type de Prix</label>
+            <select 
+              [(ngModel)]="fictiveOrderForm.priceType" 
+              (change)="onPriceTypeChange()"
+              class="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm">
+              <option value="MARKET">Prix du Marché</option>
+              <option value="LIMIT">Prix Limite</option>
+            </select>
+          </div>
+
+          <div *ngIf="fictiveOrderForm.priceType === 'LIMIT'">
+            <label class="block text-xs text-gray-600 dark:text-gray-400 mb-1">
+              Prix Limite
+              <span *ngIf="currentMarketPrice > 0" class="text-blue-600 dark:text-blue-400">
+                (Marché: {{ formatPrice(currentMarketPrice) }}€)
+              </span>
+            </label>
+            <input 
+              type="number" 
+              [(ngModel)]="fictiveOrderForm.limitPrice"
+              step="0.01"
+              min="0.01"
+              placeholder="Entrez un prix"
+              class="w-full px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm">
+            <p *ngIf="fictiveOrderForm.limitPrice <= 0 && fictiveOrderForm.priceType === 'LIMIT'" class="text-xs text-red-600 dark:text-red-400 mt-1">
+              ⚠️ Le prix doit être supérieur à 0
+            </p>
+          </div>
+
+          <button 
+            (click)="injectFictiveOrder()"
+            [disabled]="!canInjectOrder()"
+            [class]="canInjectOrder() ? 'w-full px-4 py-2 rounded-lg bg-gradient-to-r from-purple-600 to-pink-600 text-white font-semibold hover:from-purple-700 hover:to-pink-700 transition' : 'w-full px-4 py-2 rounded-lg bg-gray-300 dark:bg-gray-700 text-gray-500 dark:text-gray-400 font-semibold cursor-not-allowed'">
+            💉 Injecter l'Ordre
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Carnet d'ordres -->
+    <div class="xl:col-span-2 space-y-4">
+      <div class="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-sm font-semibold text-gray-900 dark:text-gray-50 flex items-center gap-2">
+            <span class="text-lg">📖</span>
+            Carnet d'Ordres: {{ selectedSymbol }}
+          </h3>
+          
+        </div>
+
+        <div *ngIf="currentOrderBook" class="mb-4 grid grid-cols-2 md:grid-cols-5 gap-3">
+          <div class="p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
+            <p class="text-xs text-gray-600 dark:text-gray-400">Dernier Prix</p>
+            <p class="text-lg font-bold text-gray-900 dark:text-gray-50">{{ formatPrice(currentOrderBook.lastPrice) }}€</p>
+          </div>
+          <div class="p-3 rounded-lg bg-gray-50 dark:bg-gray-800">
+            <p class="text-xs text-gray-600 dark:text-gray-400">Spread</p>
+            <p class="text-lg font-bold text-gray-900 dark:text-gray-50">{{ formatPrice(currentOrderBook.spread) }}€</p>
+          </div>
+          <div class="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-900/20">
+            <p class="text-xs text-gray-600 dark:text-gray-400">Volume Achat</p>
+            <p class="text-lg font-bold text-emerald-600 dark:text-emerald-400">{{ formatNumber(getTotalBidVolume()) }}</p>
+          </div>
+          <div class="p-3 rounded-lg bg-red-50 dark:bg-red-900/20">
+            <p class="text-xs text-gray-600 dark:text-gray-400">Volume Vente</p>
+            <p class="text-lg font-bold text-red-600 dark:text-red-400">{{ formatNumber(getTotalAskVolume()) }}</p>
+          </div>
+          <div class="p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20">
+            <p class="text-xs text-gray-600 dark:text-gray-400">Sentiment</p>
+            <p class="text-lg font-bold text-blue-600 dark:text-blue-400">{{ getMarketSentiment() }}</p>
+          </div>
+        </div>
+
+        <div *ngIf="currentOrderBook" class="grid md:grid-cols-2 gap-4">
+          <!-- Ventes (ASK) -->
+          <div>
+            <h4 class="text-xs font-semibold text-red-600 dark:text-red-400 mb-2 flex items-center gap-1">
+              📉 VENTES (ASK)
+            </h4>
+            <div class="space-y-1">
+              <div class="grid grid-cols-3 gap-2 text-xs font-medium text-gray-600 dark:text-gray-400 px-2 py-1">
+                <span>Prix</span>
+                <span class="text-right">Quantité</span>
+                <span class="text-right">Total</span>
+              </div>
+              <div class="max-h-[400px] overflow-y-auto space-y-1">
+                <div 
+                  *ngFor="let ask of currentOrderBook.asks.slice(0, 15)" 
+                  class="grid grid-cols-3 gap-2 p-2 rounded-lg bg-red-50 dark:bg-red-900/10 hover:bg-red-100 dark:hover:bg-red-900/20 transition text-sm">
+                  <span class="font-semibold text-red-600 dark:text-red-400">{{ ask.price }}</span>
+                  <span class="text-right text-gray-700 dark:text-gray-300">{{ formatNumber(ask.quantity) }}</span>
+                  <span class="text-right text-gray-900 dark:text-gray-100 font-medium">{{ formatPrice(parseFloat(ask.price) * ask.quantity) }}</span>
+                </div>
+                <div *ngIf="currentOrderBook.asks.length === 0" class="p-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                  Aucun ordre de vente
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Achats (BID) -->
+          <div>
+            <h4 class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mb-2 flex items-center gap-1">
+              📈 ACHATS (BID)
+            </h4>
+            <div class="space-y-1">
+              <div class="grid grid-cols-3 gap-2 text-xs font-medium text-gray-600 dark:text-gray-400 px-2 py-1">
+                <span>Prix</span>
+                <span class="text-right">Quantité</span>
+                <span class="text-right">Total</span>
+              </div>
+              <div class="max-h-[400px] overflow-y-auto space-y-1">
+                <div 
+                  *ngFor="let bid of currentOrderBook.bids.slice(0, 15)" 
+                  class="grid grid-cols-3 gap-2 p-2 rounded-lg bg-emerald-50 dark:bg-emerald-900/10 hover:bg-emerald-100 dark:hover:bg-emerald-900/20 transition text-sm">
+                  <span class="font-semibold text-emerald-600 dark:text-emerald-400">{{ bid.price }}</span>
+                  <span class="text-right text-gray-700 dark:text-gray-300">{{ formatNumber(bid.quantity) }}</span>
+                  <span class="text-right text-gray-900 dark:text-gray-100 font-medium">{{ formatPrice(parseFloat(bid.price) * bid.quantity) }}</span>
+                </div>
+                <div *ngIf="currentOrderBook.bids.length === 0" class="p-4 text-center text-sm text-gray-500 dark:text-gray-400">
+                  Aucun ordre d'achat
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-4 flex gap-2">
+          <button 
+            (click)="cancelAllOrders(selectedSymbol)"
+            class="flex-1 px-4 py-2 rounded-lg bg-gradient-to-r from-amber-600 to-orange-600 text-white font-semibold hover:from-amber-700 hover:to-orange-700 transition">
+            ⚠️ Annuler Tous les Ordres
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Joueurs Actifs -->
+<div 
+  *ngIf="showActivePlayersModal"
+  class="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+  (click)="closeActivePlayersModal()">
+  <div 
+    class="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl max-w-3xl w-full max-h-[80vh] overflow-hidden"
+    (click)="$event.stopPropagation()">
+    
+    <!-- Header -->
+    <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-800 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-xl">
+          👥
+        </div>
+        <div>
+          <h3 class="text-lg font-bold text-gray-900 dark:text-gray-50">Joueurs Actifs</h3>
+          <p class="text-xs text-gray-500 dark:text-gray-400">Connectés dans les 15 dernières minutes</p>
+        </div>
+      </div>
+      <button 
+        (click)="closeActivePlayersModal()"
+        class="w-8 h-8 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center justify-center transition">
+        ✕
+      </button>
+    </div>
+
+    <!-- Content -->
+    <div class="p-6 overflow-y-auto max-h-[calc(80vh-80px)]">
+      <div *ngIf="activePlayersLoading" class="text-center py-12">
+        <div class="inline-block animate-spin rounded-full h-8 w-8 border-4 border-purple-500 border-t-transparent"></div>
+        <p class="mt-3 text-sm text-gray-500 dark:text-gray-400">Chargement...</p>
+      </div>
+
+      <div *ngIf="!activePlayersLoading && activePlayers.length === 0" class="text-center py-12">
+        <div class="text-4xl mb-3">😴</div>
+        <p class="text-gray-500 dark:text-gray-400">Aucun joueur actif pour le moment</p>
+      </div>
+
+      <div *ngIf="!activePlayersLoading && activePlayers.length > 0" class="space-y-3">
+        <div 
+          *ngFor="let player of activePlayers"
+          class="rounded-xl border border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-800/50 p-4 hover:border-purple-300 dark:hover:border-purple-700 transition">
+          <div class="flex items-start justify-between">
+            <div class="flex-1">
+              <div class="flex items-center gap-2 mb-1">
+                <span class="font-semibold text-gray-900 dark:text-gray-50">{{ player.username }}</span>
+                <span 
+                  class="px-2 py-0.5 rounded text-xs font-medium"
+                  [ngClass]="{
+                    'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400': player.role === 'ROLE_MENEUR_JEU',
+                    'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400': player.role === 'ROLE_PLAYER',
+                    'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400': player.role === 'ROLE_ADMIN'
+                  }">
+                  {{ player.role === 'ROLE_MENEUR_JEU' ? 'Meneur' : player.role === 'ROLE_ADMIN' ? 'Admin' : 'Joueur' }}
+                </span>
+              </div>
+              <p class="text-sm text-gray-600 dark:text-gray-400">{{ player.email }}</p>
+            </div>
+            <div class="text-right">
+              <div class="flex items-center gap-1 text-xs text-green-600 dark:text-green-400 mb-1">
+                <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                En ligne
+              </div>
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                Dernière activité: {{ formatLastActivity(player.lastActivity) }}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="px-6 py-4 border-t border-gray-200 dark:border-gray-800 flex items-center justify-between">
+      <p class="text-sm text-gray-600 dark:text-gray-400">
+        Total: <span class="font-semibold">{{ activePlayers.length }}</span> joueur(s) actif(s)
+      </p>
+      
+    </div>
+  </div>
+</div>

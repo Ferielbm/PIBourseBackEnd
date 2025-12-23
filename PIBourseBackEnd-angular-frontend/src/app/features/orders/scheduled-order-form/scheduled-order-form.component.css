@@ -1,0 +1,145 @@
+:host {
+  display: block;
+}
+
+/* ======================
+   FORMULAIRE — LIGHT MODE
+   ====================== */
+.scheduled-order-form {
+  max-width: 450px;
+  margin: 2rem auto;
+  padding: 1.5rem;
+  border-radius: 12px;
+  background: #f8f9fa;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.09);
+  color: #111827;
+  font-family: system-ui, sans-serif;
+}
+
+/* TITRE */
+:host h2 {
+  text-align: center;
+  margin-bottom: 1.2rem;
+  font-size: 1.4rem;
+  font-weight: 600;
+  color: #111827;
+}
+
+/* INPUTS & LABELS */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  font-size: 0.85rem;
+  margin-bottom: 0.25rem;
+  color: #374151;
+}
+
+.form-group input,
+.form-group select {
+  padding: 0.55rem;
+  border-radius: 6px;
+  border: 1px solid #d1d5db;
+  background: #fff;
+  color: #111827;
+  font-size: 0.9rem;
+  transition: border 0.2s, box-shadow 0.2s;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.35);
+}
+
+/* CHECKBOX */
+.form-group.checkbox {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* BOUTON */
+.scheduled-order-form button {
+  width: 100%;
+  padding: 0.7rem;
+  border-radius: 999px;
+  background: #3b82f6;
+  border: none;
+  color: white;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.05s;
+}
+
+.scheduled-order-form button:hover:not([disabled]) {
+  background: #2563eb;
+}
+
+.scheduled-order-form button:active:not([disabled]) {
+  transform: scale(0.98);
+}
+
+.scheduled-order-form button[disabled] {
+  opacity: 0.5;
+}
+
+/* MESSAGE SUCCESS/ERROR */
+.success {
+  color: #16a34a;
+  text-align: center;
+}
+
+.error {
+  color: #dc2626;
+  text-align: center;
+}
+
+/* ======================
+   FORMULAIRE — DARK MODE
+   ====================== */
+:host-context(.dark),
+:host-context(.dark-mode) {
+}
+
+:host-context(.dark) .scheduled-order-form,
+:host-context(.dark-mode) .scheduled-order-form {
+  background: #0f172a;
+  color: #e5e7eb;
+  border: 1px solid #1e293b;
+}
+
+/* TITRES dark */
+:host-context(.dark) h2,
+:host-context(.dark-mode) h2 {
+  color: #e5e7eb !important;
+}
+
+/* INPUTS dark */
+:host-context(.dark) .form-group input,
+:host-context(.dark) .form-group select,
+:host-context(.dark-mode) .form-group input,
+:host-context(.dark-mode) .form-group select {
+  background: #1e293b;
+  color: #e5e7eb;
+  border-color: #334155;
+}
+
+:host-context(.dark) .form-group input:focus,
+:host-context(.dark) .form-group select:focus,
+:host-context(.dark-mode) .form-group input:focus,
+:host-context(.dark-mode) .form-group select:focus {
+  border-color: #60a5fa;
+  box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.35);
+}
+
+/* BOUTON dark */
+:host-context(.dark) .scheduled-order-form button,
+:host-context(.dark-mode) .scheduled-order-form button {
+  background: #3b82f6;
+  color: white;
+}

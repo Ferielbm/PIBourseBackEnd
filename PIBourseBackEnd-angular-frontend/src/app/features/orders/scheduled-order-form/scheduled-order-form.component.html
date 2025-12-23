@@ -1,0 +1,78 @@
+<div class="scheduled-order-form">
+  <h2>Créer un ordre planifié</h2>
+
+  <form [formGroup]="form" (ngSubmit)="submit()">
+
+    <div class="form-group">
+      <label>Symbole</label>
+      <select formControlName="symbol">
+        <option *ngFor="let stock of symbols" [value]="stock.symbol">
+          {{ stock.symbol }} {{ stock.name ? '- ' + stock.name : '' }}
+        </option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Type d’ordre</label>
+      <select formControlName="side">
+        <option *ngFor="let s of sides" [value]="s">{{ s }}</option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Quantité</label>
+      <input type="number" formControlName="quantity" />
+    </div>
+
+    <div class="form-group">
+      <label>Prix minimum (optionnel)</label>
+      <input type="number" formControlName="minPrice" />
+    </div>
+
+    <div class="form-group">
+      <label>Prix maximum (optionnel)</label>
+      <input type="number" formControlName="maxPrice" />
+    </div>
+
+    <div class="form-group checkbox">
+      <label>
+        <input type="checkbox" formControlName="notifyOnly" />
+        Mode manuel (ne pas exécuter automatiquement)
+      </label>
+      <small style="color: #666; display: block; margin-top: 4px;">
+        ✅ Coché : Vous recevez une notification et décidez manuellement<br>
+        ❌ Décoché : L'ordre s'exécute automatiquement (recommandé)
+      </small>
+    </div>
+
+    <div class="form-group checkbox">
+      <label>
+        <input type="checkbox" formControlName="notifyWhenApproachMin" />
+        Notification d'alerte avant exécution
+      </label>
+      <small style="color: #666; display: block; margin-top: 4px;">
+        Vous prévient quand le prix approche de la fourchette (temps pour annuler si besoin)
+      </small>
+    </div>
+
+    <div *ngIf="showApproachFields()">
+      <div class="form-group">
+        <label>Seuil d’approche (%)</label>
+        <input type="number" step="0.01" formControlName="approachThresholdPct" />
+      </div>
+
+      <div class="form-group">
+        <label>Cooldown (minutes)</label>
+        <input type="number" formControlName="approachCooldownMinutes" />
+      </div>
+    </div>
+
+    <button type="submit" [disabled]="isSubmitting">
+      {{ isSubmitting ? 'Création...' : 'Créer l’ordre planifié' }}
+    </button>
+
+    <p class="success" *ngIf="successMessage">{{ successMessage }}</p>
+    <p class="error" *ngIf="errorMessage">{{ errorMessage }}</p>
+
+  </form>
+</div>

@@ -1,0 +1,21 @@
+<div class="stats-bar" *ngIf="stats as s">
+  <div class="item">
+    <span>Best Bid</span>
+    <strong>{{ s.bestBid !== null ? (s.bestBid | number:'1.3-3') : '-' }}</strong>
+  </div>
+  <div class="item mid">
+    <span>Mid / Spread</span>
+    <strong>
+      <ng-container *ngIf="s.bestBid !== null && s.bestAsk !== null; else noMid">
+        {{ ((s.bestBid + s.bestAsk) / 2) | number:'1.3-3' }}
+        <span class="sep">/</span>
+        {{ (s.bestAsk - s.bestBid) | number:'1.3-3' }}
+      </ng-container>
+      <ng-template #noMid>Pas de bid/ask</ng-template>
+    </strong>
+  </div>
+  <div class="item">
+    <span>Best Ask</span>
+    <strong>{{ s.bestAsk !== null ? (s.bestAsk | number:'1.3-3') : '-' }}</strong>
+  </div>
+</div>

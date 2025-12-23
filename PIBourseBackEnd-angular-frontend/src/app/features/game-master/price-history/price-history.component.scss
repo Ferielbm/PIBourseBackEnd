@@ -1,0 +1,8 @@
+.price-history-container {
+  min-height: 100vh;
+  background: #f9fafb;
+}
+
+:host-context(.dark) .price-history-container {
+  background: #111827;
+}

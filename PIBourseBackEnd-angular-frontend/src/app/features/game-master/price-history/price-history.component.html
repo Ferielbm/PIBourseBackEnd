@@ -1,0 +1,306 @@
+<div class="price-history-container p-6 space-y-6">
+  <!-- En-tête -->
+  <div class="flex items-center justify-between">
+    <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+      📊 Historique et Gestion des Prix
+    </h1>
+    
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Liste des symboles -->
+    <div class="lg:col-span-1 space-y-4">
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-4">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          Symboles
+        </h2>
+        
+        <div *ngIf="loading && stocks.length === 0" class="text-center py-8">
+          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">Chargement...</p>
+        </div>
+
+        <div class="space-y-2">
+          <button
+            *ngFor="let stock of stocks"
+            (click)="selectStock(stock)"
+            [class.bg-purple-100]="selectedStock?.id === stock.id"
+            [class.dark:bg-purple-900]="selectedStock?.id === stock.id"
+            class="w-full text-left px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="font-semibold text-gray-900 dark:text-white">{{ stock.symbol }}</div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">{{ stock.name }}</div>
+              </div>
+              <div class="text-right">
+                <div class="font-bold text-gray-900 dark:text-white">{{ stock.lastPrice | number:'1.2-2' }}</div>
+              </div>
+            </div>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Formulaire de modification + Historique -->
+    <div class="lg:col-span-2 space-y-4">
+      <!-- Formulaire -->
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+        <h2 class="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          ✏️ Modifier le Prix
+        </h2>
+
+        <div *ngIf="!selectedStock" class="text-center py-8 text-gray-500 dark:text-gray-400">
+          Sélectionnez un symbole pour modifier son prix
+        </div>
+
+        <div *ngIf="selectedStock" class="space-y-4">
+          <div class="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="text-sm text-gray-500 dark:text-gray-400">Symbole sélectionné</div>
+                <div class="text-xl font-bold text-gray-900 dark:text-white">{{ selectedStock.symbol }}</div>
+                <div class="text-sm text-gray-600 dark:text-gray-300">{{ selectedStock.name }}</div>
+              </div>
+              <div class="text-right">
+                <div class="text-sm text-gray-500 dark:text-gray-400">Prix actuel</div>
+                <div class="text-2xl font-bold text-purple-600">{{ selectedStock.lastPrice | number:'1.2-2' }}</div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Nouveau Prix
+            </label>
+            <input
+              type="number"
+              [(ngModel)]="priceUpdateForm.newPrice"
+              step="0.01"
+              min="0.01"
+              class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-600 focus:border-transparent"
+              placeholder="Entrez le nouveau prix">
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Événement de Marché
+            </label>
+            <select
+              [(ngModel)]="priceUpdateForm.eventType"
+              class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-600 focus:border-transparent">
+              <option value="">-- Sélectionner un événement --</option>
+              <option *ngFor="let event of marketEvents" [value]="event.id">
+                {{ event.label }}
+              </option>
+            </select>
+            <p *ngIf="priceUpdateForm.eventType" class="text-xs text-gray-600 dark:text-gray-400 mt-1">
+              {{ getSelectedEventDescription() }}
+            </p>
+          </div>
+
+          <div *ngIf="priceUpdateForm.eventType === 'MANIPULATION'">
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Symbole Cible
+            </label>
+            <select
+              [(ngModel)]="priceUpdateForm.eventSymbol"
+              class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-purple-600 focus:border-transparent">
+              <option *ngFor="let stock of stocks" [value]="stock.symbol">
+                {{ stock.symbol }} - {{ stock.name }}
+              </option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Intensité: {{ priceUpdateForm.eventIntensity }}%
+            </label>
+            <input
+              type="range"
+              [(ngModel)]="priceUpdateForm.eventIntensity"
+              min="1"
+              max="100"
+              class="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none cursor-pointer accent-purple-600">
+          </div>
+
+          <div *ngIf="priceUpdateForm.newPrice !== selectedStock.lastPrice && priceUpdateForm.newPrice > 0" 
+               class="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+            <div class="text-sm text-blue-800 dark:text-blue-300">
+              <strong>Aperçu du changement:</strong>
+              <div class="mt-2">
+                {{ selectedStock.lastPrice | number:'1.2-2' }} → {{ priceUpdateForm.newPrice | number:'1.2-2' }}
+                <span [class]="getChangeClass(calculateChange(selectedStock.lastPrice, priceUpdateForm.newPrice))" class="font-bold ml-2">
+                  {{ getChangeIcon(calculateChange(selectedStock.lastPrice, priceUpdateForm.newPrice)) }}
+                  {{ calculateChange(selectedStock.lastPrice, priceUpdateForm.newPrice) | number:'1.2-2' }}%
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <button
+            (click)="updatePrice()"
+            [disabled]="loading || priceUpdateForm.newPrice <= 0"
+            class="w-full px-6 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition font-semibold">
+            <span *ngIf="!loading">💾 Mettre à jour le prix</span>
+            <span *ngIf="loading">⏳ Mise à jour en cours...</span>
+          </button>
+
+          <button
+            (click)="triggerMarketEvent()"
+            [disabled]="loading || !priceUpdateForm.eventType"
+            class="w-full px-6 py-3 bg-gradient-to-r from-red-600 to-orange-600 text-white rounded-lg hover:from-red-700 hover:to-orange-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition font-semibold">
+            <span *ngIf="!loading">🔥 Déclencher l'Événement</span>
+            <span *ngIf="loading">⏳ Déclenchement en cours...</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Historique des prix -->
+      <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h2 class="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+            📈 Historique Complet des Prix
+          </h2>
+          <!-- Filtre par mois -->
+          <select 
+            *ngIf="selectedStock && availableMonths.length > 1"
+            [(ngModel)]="selectedMonth"
+            (change)="onMonthChange(selectedMonth)"
+            class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-purple-500">
+            <option *ngFor="let month of availableMonths" [value]="month.value">
+              {{ month.label }}
+            </option>
+          </select>
+        </div>
+
+        <div *ngIf="!selectedStock" class="text-center py-8 text-gray-500 dark:text-gray-400">
+          Sélectionnez un symbole pour voir son historique
+        </div>
+
+        <div *ngIf="loading && selectedStock" class="text-center py-8">
+          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
+          <p class="text-sm text-gray-500 dark:text-gray-400 mt-2">Chargement de l'historique...</p>
+        </div>
+
+        <div *ngIf="selectedStock && !loading && priceHistory.length === 0" class="text-center py-8 text-gray-500 dark:text-gray-400">
+          Aucun historique disponible pour ce symbole
+        </div>
+
+        <!-- Affichage complet : Tous les mois, tous les jours, tous les prix (mode 'all') -->
+        <div *ngIf="selectedStock && !loading && selectedMonth === 'all' && groupedByMonth.length > 0" 
+             class="space-y-6 max-h-[600px] overflow-y-auto">
+          <div *ngFor="let monthGroup of groupedByMonth" class="space-y-3">
+            <!-- En-tête du mois -->
+            <div class="sticky top-0 z-10 bg-gradient-to-r from-purple-600 to-purple-500 px-5 py-3 rounded-lg font-bold text-white shadow-md">
+              📆 {{ formatMonthHeader(monthGroup.month) }}
+            </div>
+            
+            <!-- Jours du mois -->
+            <div class="pl-4 space-y-3">
+              <div *ngFor="let dayGroup of monthGroup.days" class="space-y-2">
+                <!-- En-tête du jour -->
+                <div class="bg-purple-100 dark:bg-purple-900/30 px-4 py-2 rounded-lg font-semibold text-purple-900 dark:text-purple-200 border-l-4 border-purple-500">
+                  📅 {{ formatDayHeader(dayGroup.date) }}
+                </div>
+                
+                <!-- Entrées du jour -->
+                <div class="space-y-2 pl-4">
+                  <div *ngFor="let entry of dayGroup.entries" 
+                       class="border border-gray-200 dark:border-gray-700 rounded-lg p-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                    <div class="flex items-start justify-between">
+                      <div class="flex-1">
+                        <div class="flex items-center gap-3">
+                          <span class="text-xl font-bold text-gray-900 dark:text-white">
+                            {{ (entry.closePrice ?? entry.price) | number:'1.2-2' }} €
+                          </span>
+                          <span [class]="getChangeClass(entry.changePercent)" class="font-semibold text-sm">
+                            {{ getChangeIcon(entry.changePercent) }} {{ entry.changePercent | number:'1.2-2' }}%
+                          </span>
+                        </div>
+                        <!-- OHLC block if available -->
+                        <div *ngIf="entry.openPrice !== undefined || entry.highPrice !== undefined || entry.lowPrice !== undefined || entry.closePrice !== undefined" 
+                             class="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                          <div class="bg-gray-100 dark:bg-gray-900/40 rounded px-2 py-1">
+                            <span class="text-gray-600 dark:text-gray-300">Ouv.</span>
+                            <span class="font-semibold text-gray-900 dark:text-white">{{ entry.openPrice ?? '-' }}</span>
+                          </div>
+                          <div class="bg-gray-100 dark:bg-gray-900/40 rounded px-2 py-1">
+                            <span class="text-gray-600 dark:text-gray-300">Haut</span>
+                            <span class="font-semibold text-gray-900 dark:text-white">{{ entry.highPrice ?? '-' }}</span>
+                          </div>
+                          <div class="bg-gray-100 dark:bg-gray-900/40 rounded px-2 py-1">
+                            <span class="text-gray-600 dark:text-gray-300">Bas</span>
+                            <span class="font-semibold text-gray-900 dark:text-white">{{ entry.lowPrice ?? '-' }}</span>
+                          </div>
+                          <div class="bg-gray-100 dark:bg-gray-900/40 rounded px-2 py-1">
+                            <span class="text-gray-600 dark:text-gray-300">Clôt.</span>
+                            <span class="font-semibold text-gray-900 dark:text-white">{{ entry.closePrice ?? '-' }}</span>
+                          </div>
+                        </div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          🕐 {{ formatDate(entry.timestamp) }}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Affichage mois spécifique : Groupé par jour -->
+        <div *ngIf="selectedStock && !loading && selectedMonth !== 'all' && groupedByDay.length > 0" 
+             class="space-y-4 max-h-[600px] overflow-y-auto">
+          <div class="sticky top-0 z-10 bg-gradient-to-r from-purple-600 to-purple-500 px-5 py-3 rounded-lg font-bold text-white shadow-md">
+            📆 {{ formatMonthHeader(selectedMonth) }}
+          </div>
+          <div *ngFor="let dayGroup of groupedByDay" class="space-y-2">
+            <div class="bg-purple-100 dark:bg-purple-900/30 px-4 py-2 rounded-lg font-semibold text-purple-900 dark:text-purple-200 border-l-4 border-purple-500">
+              📅 {{ formatDayHeader(dayGroup.date) }}
+            </div>
+            <div class="space-y-2 pl-4">
+              <div *ngFor="let entry of dayGroup.entries" 
+                   class="border border-gray-200 dark:border-gray-700 rounded-lg p-3 hover:bg-gray-50 dark:hover:bg-gray-700 transition">
+                <div class="flex items-start justify-between">
+                  <div class="flex-1">
+                    <div class="flex items-center gap-3">
+                      <span class="text-xl font-bold text-gray-900 dark:text-white">
+                        {{ (entry.closePrice ?? entry.price) | number:'1.2-2' }} €
+                      </span>
+                      <span [class]="getChangeClass(entry.changePercent)" class="font-semibold text-sm">
+                        {{ getChangeIcon(entry.changePercent) }} {{ entry.changePercent | number:'1.2-2' }}%
+                      </span>
+                    </div>
+                    <div *ngIf="entry.openPrice !== undefined || entry.highPrice !== undefined || entry.lowPrice !== undefined || entry.closePrice !== undefined" 
+                         class="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                      <div class="bg-gray-100 dark:bg-gray-900/40 rounded px-2 py-1">
+                        <span class="text-gray-600 dark:text-gray-300">Ouv.</span>
+                        <span class="font-semibold text-gray-900 dark:text-white">{{ entry.openPrice ?? '-' }}</span>
+                      </div>
+                      <div class="bg-gray-100 dark:bg-gray-900/40 rounded px-2 py-1">
+                        <span class="text-gray-600 dark:text-gray-300">Haut</span>
+                        <span class="font-semibold text-gray-900 dark:text-white">{{ entry.highPrice ?? '-' }}</span>
+                      </div>
+                      <div class="bg-gray-100 dark:bg-gray-900/40 rounded px-2 py-1">
+                        <span class="text-gray-600 dark:text-gray-300">Bas</span>
+                        <span class="font-semibold text-gray-900 dark:text-white">{{ entry.lowPrice ?? '-' }}</span>
+                      </div>
+                      <div class="bg-gray-100 dark:bg-gray-900/40 rounded px-2 py-1">
+                        <span class="text-gray-600 dark:text-gray-300">Clôt.</span>
+                        <span class="font-semibold text-gray-900 dark:text-white">{{ entry.closePrice ?? '-' }}</span>
+                      </div>
+                    </div>
+                    <div class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      🕐 {{ formatDate(entry.timestamp) }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

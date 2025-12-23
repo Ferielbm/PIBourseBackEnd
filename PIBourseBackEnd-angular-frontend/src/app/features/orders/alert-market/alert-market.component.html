@@ -1,0 +1,203 @@
+<div class="space-y-4">
+  <div class="flex items-center justify-between">
+    <h2 class="text-lg font-semibold text-gray-700 dark:text-gray-200">Alertes de prix</h2>
+    <div class="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+      <svg class="h-4 w-4 text-blue-600 dark:text-blue-400" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5S9.5 3.17 9.5 4v.68C6.63 5.36 5 7.92 5 11v5l-2 2v1h18v-1l-2-2z"/>
+      </svg>
+      <span class="text-xs font-medium text-blue-700 dark:text-blue-300">
+        🎯 Notification quand le prix est DANS l'intervalle [Min, Max]
+      </span>
+    </div>
+  </div>
+
+  <!-- FILTRES LISTE -->
+  <div class="flex flex-wrap gap-2">
+    <input
+      type="text"
+      [(ngModel)]="searchTerm"
+      placeholder="Rechercher par symbole..."
+      class="px-3 py-2 rounded-md bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm" />
+
+    <select
+      [(ngModel)]="statusFilter"
+      class="px-3 py-2 rounded-md bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm">
+      <option value="ALL">Tous les statuts</option>
+      <option value="ACTIVE">Actives</option>
+      <option value="PAUSED">En pause</option>
+      <option value="CANCELLED">Annulées</option>
+    </select>
+  </div>
+
+  <!-- FORMULAIRE DE CRÉATION -->
+  <form [formGroup]="form" (ngSubmit)="createAlert()" class="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 space-y-4">
+    <!-- Symbole -->
+    <div class="space-y-2">
+      <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Symbole</label>
+
+      <!-- Dropdown de sélection avec recherche -->
+      <div class="relative" #symbolWrapper>
+        <input
+          #symbolInput
+          type="text"
+          class="w-full px-3 py-2 rounded-md bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm cursor-pointer"
+          placeholder="-- Choisir un symbole --"
+          [value]="symbolSearch"
+          (click)="openSymbols = true"
+          (input)="onSymbolSearchChange(symbolInput.value)" />
+
+        <div *ngIf="openSymbols" class="symbol-dropdown absolute z-40 mt-1 w-full max-h-60 overflow-auto rounded-md border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg">
+          <div *ngIf="filteredSymbols.length === 0" class="px-3 py-2 text-sm text-gray-500">
+            Aucun symbole
+          </div>
+
+          <button
+            *ngFor="let s of filteredSymbols"
+            type="button"
+            class="w-full text-left px-3 py-2 hover:bg-gray-100 dark:hover:bg-gray-800 text-sm"
+            (click)="selectSymbol(s)">
+            {{ s.symbol }}{{ s.name ? ' - ' + s.name : '' }}
+          </button>
+        </div>
+      </div>
+
+      <div class="text-xs text-red-600" *ngIf="hasControlError('symbol')">
+        Le symbole est obligatoire.
+      </div>
+    </div>
+
+    <!-- Prix min -->
+    <div class="space-y-2">
+      <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Prix min</label>
+      <input
+        type="number"
+        formControlName="minPrice"
+        step="0.01"
+        class="w-full px-3 py-2 rounded-md bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm" />
+    </div>
+
+    <!-- Prix max -->
+    <div class="space-y-2">
+      <label class="text-sm font-medium text-gray-700 dark:text-gray-300">Prix max</label>
+      <input
+        type="number"
+        formControlName="maxPrice"
+        step="0.01"
+        class="w-full px-3 py-2 rounded-md bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm" />
+    </div>
+
+    <!-- Erreurs globales du formGroup -->
+    <div class="space-y-2">
+      <!-- Info sur le fonctionnement -->
+      <div class="flex items-start gap-2 p-3 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800">
+        <svg class="h-5 w-5 text-indigo-600 dark:text-indigo-400 mt-0.5 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+        </svg>
+        <div class="text-xs text-indigo-700 dark:text-indigo-300">
+          <strong>Comment ça marche :</strong>
+          <ul class="mt-1 space-y-1 list-disc list-inside">
+            <li><strong>Min ET Max définis :</strong> Notification quand le prix entre dans [Min, Max]</li>
+            <li><strong>Seulement Min :</strong> Notification quand le prix atteint ou dépasse Min</li>
+            <li><strong>Seulement Max :</strong> Notification quand le prix atteint ou descend sous Max</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="text-xs text-red-600" *ngIf="formErrors?.['priceRequired'] && form.touched">
+        Veuillez saisir au moins un prix min ou max.
+      </div>
+
+      <div class="text-xs text-red-600" *ngIf="formErrors?.['invalidRange'] && form.touched">
+        Le prix min doit être inférieur ou égal au prix max.
+      </div>
+    </div>
+
+    <div class="flex justify-end">
+      <button
+        type="submit"
+        class="px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 transition"
+        [disabled]="submitting || form.invalid">
+        {{ submitting ? 'Création...' : 'Créer une alerte' }}
+      </button>
+    </div>
+  </form>
+
+  <!-- Messages globaux -->
+  <p class="text-sm text-red-600" *ngIf="error">{{ error }}</p>
+  <p class="text-sm text-green-600" *ngIf="successMessage">{{ successMessage }}</p>
+
+  <h3 class="text-base font-medium text-gray-700 dark:text-gray-200 mt-6">Alertes existantes</h3>
+
+  <!-- État de chargement -->
+  <div *ngIf="loading" class="text-sm text-gray-500 dark:text-gray-400">
+    Chargement des alertes...
+  </div>
+
+  <!-- LISTE DES ALERTES -->
+  <table
+    *ngIf="!loading && filteredAlerts.length > 0"
+    class="min-w-full text-xs md:text-sm rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+    <thead class="bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300">
+      <tr>
+        <th class="px-4 py-3 text-left">Symbole</th>
+        <th class="px-4 py-3 text-right">Min</th>
+        <th class="px-4 py-3 text-right">Max</th>
+        <th class="px-4 py-3 text-center">Statut</th>
+        <th class="px-4 py-3 text-left">Créée le</th>
+        <th class="px-4 py-3 text-center">Actions</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <tr *ngFor="let a of filteredAlerts" class="border-t border-gray-100 dark:border-gray-800">
+        <td class="px-4 py-3">{{ a.symbol }}</td>
+        <td class="px-4 py-3 text-right">{{ a.minPrice ?? '-' }}</td>
+        <td class="px-4 py-3 text-right">{{ a.maxPrice ?? '-' }}</td>
+        <td class="px-4 py-3 text-center">
+          <span
+            class="px-2 py-0.5 rounded-full text-[11px] inline-flex"
+            [ngClass]="{
+              'badge-active': a.status === 'ACTIVE' || !a.status,
+              'badge-paused': a.status === 'PAUSED',
+              'badge-cancelled': a.status === 'CANCELLED'
+            }">
+            {{ a.status || 'ACTIVE' }}
+          </span>
+        </td>
+        <td class="px-4 py-3">{{ a.createdAt | date2023 }}</td>
+        <td class="px-4 py-3 text-center space-x-1">
+          <button
+            type="button"
+            class="px-2 py-1 text-xs rounded border border-green-600 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/10"
+            (click)="changeStatus(a, 'ACTIVE')">
+            Activer
+          </button>
+          <button
+            type="button"
+            class="px-2 py-1 text-xs rounded border border-amber-600 text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/10"
+            (click)="changeStatus(a, 'PAUSED')">
+            Pause
+          </button>
+          <button
+            type="button"
+            class="px-2 py-1 text-xs rounded border border-gray-400 text-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800"
+            (click)="changeStatus(a, 'CANCELLED')">
+            Annuler
+          </button>
+          <button
+            type="button"
+            class="px-2 py-1 text-xs rounded border border-red-600 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10"
+            (click)="deleteAlert(a.id)">
+            Supprimer
+          </button>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div
+    *ngIf="!loading && filteredAlerts.length === 0"
+    class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">
+    Aucune alerte pour le moment.
+  </div>
+</div>

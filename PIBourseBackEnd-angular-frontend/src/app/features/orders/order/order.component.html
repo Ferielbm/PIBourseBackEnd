@@ -1,0 +1,236 @@
+<div class="space-y-4">
+  <div class="flex flex-wrap items-center gap-2">
+    <!-- 🔎 Recherche symbole -->
+    <input
+      type="text"
+      [(ngModel)]="searchTerm"
+      placeholder="Rechercher par symbole..."
+      class="px-3 py-2 rounded-md bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm"
+    />
+
+    <!-- FILTRE TYPE (Achat / Vente) -->
+    <select
+      (change)="onSideFilterChange($event)"
+      class="px-3 py-2 rounded-md bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm">
+      <option value="ALL">Toutes</option>
+      <option value="BUY">Achat</option>
+      <option value="SELL">Vente</option>
+    </select>
+
+    <!-- FILTRE STATUT -->
+    <select
+      (change)="onStatusFilterChange($event)"
+      class="px-3 py-2 rounded-md bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm">
+      <option value="ALL">Statut: Tous</option>
+      <option value="FILLED">Exécuté</option>
+      <option value="PARTIALLY_FILLED">Partiel</option>
+      <option value="CANCELLED">Annulé</option>
+    </select>
+
+    <!-- Sélection du symbole pour l'order book -->
+    <select
+      [(ngModel)]="selectedSymbol"
+      class="px-3 py-2 rounded-md bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-sm">
+      <option *ngIf="availableSymbols.length === 0" [ngValue]="null">Aucun symbole</option>
+      <option *ngFor="let sym of availableSymbols" [ngValue]="sym">{{ sym }}</option>
+    </select>
+ 
+    <!-- ✅ Bouton vers /scheduled-orders -->
+    <button
+      (click)="goToScheduledOrders()"
+      class="ml-auto px-4 py-2 bg-purple-600 text-white rounded-md text-sm hover:bg-purple-700 transition flex items-center gap-2">
+      📅 Ordres Planifiés
+      <span *ngIf="scheduledOrdersCount > 0" class="bg-purple-800 px-2 py-0.5 rounded text-xs font-semibold">
+        {{ scheduledOrdersCount }}
+      </span>
+    </button>
+
+    <!-- Bouton vers alert-market -->
+    <button
+      routerLink="/alert-market"
+      class="px-4 py-2 bg-amber-600 text-white rounded-md text-sm hover:bg-amber-700 transition">
+      ⚠ Alertes marché
+    </button>
+
+  </div>
+
+  <div *ngIf="loading" class="text-sm text-gray-500 dark:text-gray-400">
+    Chargement des ordres...
+  </div>
+
+  <div *ngIf="error" class="text-sm text-red-600">
+    {{ error }}
+  </div>
+
+  <div *ngIf="debugMessage" class="text-sm text-yellow-600 flex items-center gap-2">
+    <div>{{ debugMessage }}</div>
+    <button (click)="retryLoadOrders()" class="px-2 py-1 bg-gray-200 rounded text-xs">Recharger</button>
+  </div>
+
+  <!-- ========= SIDE-BY-SIDE ORDER BOOK STYLE (type carnet de bourse) ========= -->
+  <div *ngIf="!loading" class="space-y-4">
+    <!-- Centre: best bid / mid / best ask + spread -->
+    <div class="flex items-center w-full text-xs md:text-sm">
+      <div class="w-1/3 pr-4 text-right">
+        <div class="text-gray-500 dark:text-gray-400">Best Bid</div>
+        <div class="font-semibold text-emerald-600" *ngIf="bestBid !== null">{{ bestBid | number:'1.3-3' }}</div>
+        <div class="text-gray-400" *ngIf="bestBid === null">-</div>
+      </div>
+      <div class="w-1/3 px-4 py-2 rounded-lg bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-center mx-auto">
+        <div class="text-gray-500 dark:text-gray-400">Mid / Spread</div>
+        <div class="font-semibold" *ngIf="midPrice !== null">{{ midPrice | number:'1.3-3' }}</div>
+        <div class="text-xs text-gray-500" *ngIf="spread !== null">Spread: {{ spread | number:'1.3-3' }}</div>
+        <div class="text-gray-400" *ngIf="midPrice === null">Pas de bid/ask</div>
+      </div>
+      <div class="w-1/3 pl-4 text-left">
+        <div class="text-gray-500 dark:text-gray-400">Best Ask</div>
+        <div class="font-semibold text-red-600" *ngIf="bestAsk !== null">{{ bestAsk | number:'1.3-3' }}</div>
+        <div class="text-gray-400" *ngIf="bestAsk === null">-</div>
+      </div>
+    </div>
+
+    <!-- Tables BUY / SELL côte à côte -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <!-- BUY TABLE (Bid side) -->
+    <div class="overflow-auto rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+      <div class="px-4 pt-3 pb-1 text-xs font-semibold text-emerald-600">
+        Carnet Achat (Bid)
+      </div>
+      <table class="min-w-full text-sm">
+        <thead class="bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300">
+          <tr>
+            <th class="text-left px-4 py-3 text-emerald-600">Qté</th>
+            <th class="text-right px-4 py-3 text-emerald-600">Prix</th>
+            <th class="text-right px-4 py-3 text-emerald-600 text-xs">Ordres</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of groupedBuyRows" class="border-t border-gray-100 dark:border-gray-800">
+            <td class="px-4 py-3 text-left">{{ row.volume | number:'1.0-0' }}</td>
+            <td class="px-4 py-3 text-right font-semibold text-emerald-600">{{ row.price | number:'1.3-3' }}</td>
+            <td class="px-4 py-3 text-right text-xs text-gray-500">{{ row.count }}</td>
+          </tr>
+          <tr *ngIf="groupedBuyRows.length === 0">
+            <td colspan="3" class="px-4 py-4 text-center text-gray-500 dark:text-gray-400">Aucun ordre d'achat</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- SELL TABLE (Ask side) -->
+    <div class="overflow-auto rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+      <div class="px-4 pt-3 pb-1 text-xs font-semibold text-red-600">
+        Carnet Vente (Ask)
+      </div>
+      <table class="min-w-full text-sm">
+        <thead class="bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300">
+          <tr>
+            <th class="text-left px-4 py-3 text-red-600">Prix</th>
+            <th class="text-right px-4 py-3 text-red-600">Qté</th>
+            <th class="text-right px-4 py-3 text-red-600 text-xs">Ordres</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let row of groupedSellRows" class="border-t border-gray-100 dark:border-gray-800">
+            <td class="px-4 py-3 text-left font-semibold text-red-600">{{ row.price | number:'1.3-3' }}</td>
+            <td class="px-4 py-3 text-right">{{ row.volume | number:'1.0-0' }}</td>
+            <td class="px-4 py-3 text-right text-xs text-gray-500">{{ row.count }}</td>
+          </tr>
+          <tr *ngIf="groupedSellRows.length === 0">
+            <td colspan="3" class="px-4 py-4 text-center text-gray-500 dark:text-gray-400">Aucun ordre de vente</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    </div>
+    
+    <!-- SUMMARY BAR (total buy / total sell) -->
+    <div class="mt-2">
+      <div class="flex items-center justify-between text-xs font-semibold">
+        <span class="text-emerald-600">{{ totalBuyVolume | number:'1.0-0' }}</span>
+        <span class="text-red-600">{{ totalSellVolume | number:'1.0-0' }}</span>
+      </div>
+      <div class="bar-container mt-1">
+        <div class="bar-buy" [style.width.%]="buyPercent"></div>
+        <div class="bar-sell" [style.width.%]="sellPercent"></div>
+      </div>
+    </div>
+
+    <!-- Stats bar removed to avoid duplication; keep only the top panel -->
+
+    <!-- DEPTH CHART SIMPLIFIE (volumes cumulatifs) -->
+    <div class="mt-4 flex justify-center w-full">
+      <app-depth-chart
+        [buyLevels]="buyDepthLevels"
+        [sellLevels]="sellDepthLevels"
+        [width]="800"
+        [height]="600"
+        [bestBid]="bestBid"
+        [bestAsk]="bestAsk"
+        [lastPrice]="bestAsk"
+        [openPrice]="bestBid"
+        [highPrice]="bestAsk"
+        [lowPrice]="bestBid"
+        [volume]="totalBuyVolume + totalSellVolume"
+      ></app-depth-chart>
+    </div>
+  </div>
+
+  <!-- Empty state -->
+  <div *ngIf="!loading && filteredOrders.length === 0" class="px-4 py-6 text-center text-gray-500 dark:text-gray-400">
+    Aucun ordre trouvé pour ces filtres.
+  </div>
+</div>
+
+<!-- MES ORDRES (par playerId) -->
+<div class="mt-6 space-y-2">
+  <div class="flex items-center justify-between">
+    <h3 class="text-sm font-semibold text-gray-700 dark:text-gray-200">
+      Mes ordres 
+    </h3>
+  </div>
+
+  <table class="min-w-full text-xs md:text-sm rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900">
+    <thead class="bg-gray-50 dark:bg-gray-800 text-gray-600 dark:text-gray-300">
+      <tr>
+        <th class="px-3 py-2 text-left">Symbole</th>
+        <th class="px-3 py-2 text-left">Side</th>
+        <th class="px-3 py-2 text-right">Qté</th>
+        <th class="px-3 py-2 text-right">Prix</th>
+        <th class="px-3 py-2 text-left">Statut</th>
+        <th class="px-3 py-2 text-right">Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let o of myOrders" class="border-t border-gray-100 dark:border-gray-800">
+        <td class="px-3 py-2">{{ getSymbolDisplay(o) }}</td>
+        <td class="px-3 py-2">
+          <span [ngClass]="getSideBadgeClass(o.side)" class="px-2 py-0.5 rounded-full text-[11px]">
+            {{ getSideLabel(o.side) }}
+          </span>
+        </td>
+        <td class="px-3 py-2 text-right">{{ o.quantity }}</td>
+        <td class="px-3 py-2 text-right">{{ getUnitPrice(o) | number:'1.2-2' }}</td>
+        <td class="px-3 py-2">
+          <span class="px-2 py-0.5 rounded-full text-[11px]" [ngClass]="getStatusBadgeClass(o.status)">
+            {{ getStatusLabel(o.status) }}
+          </span>
+        </td>
+        <td class="px-3 py-2 text-right">
+          <button
+            type="button"
+            class="px-2 py-1 text-xs rounded bg-red-600 text-white hover:bg-red-700"
+            (click)="cancelMyOrder(o)">
+            Annuler
+          </button>
+        </td>
+      </tr>
+      <tr *ngIf="myOrders.length === 0">
+        <td colspan="7" class="px-3 py-3 text-center text-gray-500 dark:text-gray-400">
+          Aucun ordre pour player {{ playerId }}.
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>

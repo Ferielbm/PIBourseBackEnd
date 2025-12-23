@@ -1,0 +1,536 @@
+.game-master-container {
+  padding: 20px;
+  max-width: 1800px;
+  margin: 0 auto;
+  background: #f8fafc;
+  min-height: 100vh;
+}
+
+:host-context(.dark) .game-master-container {
+  background: #0f172a;
+}
+
+.header {
+  margin-bottom: 30px;
+}
+
+h1 {
+  margin: 0 0 20px 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+:host-context(.dark) h1 {
+  color: #f1f5f9;
+}
+
+.header-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.stat-card {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+:host-context(.dark) .stat-card {
+  background: #1e293b;
+}
+
+.stat-label {
+  font-size: 13px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+:host-context(.dark) .stat-value {
+  color: #f1f5f9;
+}
+
+.content-grid {
+  display: grid;
+  grid-template-columns: 350px 1fr;
+  gap: 24px;
+}
+
+@media (max-width: 1200px) {
+  .content-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.control-panel, .orderbook-panel {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+:host-context(.dark) .control-panel,
+:host-context(.dark) .orderbook-panel {
+  background: #1e293b;
+}
+
+h2 {
+  margin: 0 0 20px 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+:host-context(.dark) h2 {
+  color: #f1f5f9;
+}
+
+h3 {
+  margin: 0 0 12px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #334155;
+}
+
+:host-context(.dark) h3 {
+  color: #cbd5e1;
+}
+
+.control-section {
+  margin-bottom: 28px;
+  padding-bottom: 28px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+:host-context(.dark) .control-section {
+  border-bottom-color: #334155;
+}
+
+.control-section:last-child {
+  border-bottom: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+
+.form-group {
+  margin-bottom: 16px;
+}
+
+label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #475569;
+}
+
+:host-context(.dark) label {
+  color: #94a3b8;
+}
+
+.form-control {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #1e293b;
+  background: white;
+  transition: all 0.2s;
+}
+
+:host-context(.dark) .form-control {
+  background: #0f172a;
+  border-color: #475569;
+  color: #f1f5f9;
+}
+
+.form-control:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.button-group {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.btn-side {
+  padding: 10px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  background: white;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+:host-context(.dark) .btn-side {
+  background: #0f172a;
+  border-color: #475569;
+}
+
+.btn-side.buy {
+  color: #059669;
+}
+
+.btn-side.buy.active {
+  background: #d1fae5;
+  border-color: #059669;
+}
+
+:host-context(.dark) .btn-side.buy.active {
+  background: #064e3b;
+  border-color: #10b981;
+}
+
+.btn-side.sell {
+  color: #dc2626;
+}
+
+.btn-side.sell.active {
+  background: #fee2e2;
+  border-color: #dc2626;
+}
+
+:host-context(.dark) .btn-side.sell.active {
+  background: #7f1d1d;
+  border-color: #ef4444;
+}
+
+.slider {
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: #e2e8f0;
+  outline: none;
+  -webkit-appearance: none;
+}
+
+:host-context(.dark) .slider {
+  background: #475569;
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #3b82f6;
+  cursor: pointer;
+}
+
+.slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #3b82f6;
+  cursor: pointer;
+  border: none;
+}
+
+.hint {
+  display: block;
+  margin-top: 6px;
+  font-size: 12px;
+  color: #64748b;
+  font-style: italic;
+}
+
+.btn-primary, .btn-danger, .btn-warning, .btn-refresh {
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-primary {
+  background: #3b82f6;
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.btn-danger {
+  background: #ef4444;
+  color: white;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: #dc2626;
+}
+
+.btn-warning {
+  background: #f59e0b;
+  color: white;
+}
+
+.btn-warning:hover:not(:disabled) {
+  background: #d97706;
+}
+
+.btn-refresh {
+  background: #8b5cf6;
+  color: white;
+  padding: 8px 16px;
+  font-size: 13px;
+}
+
+.btn-refresh:hover {
+  background: #7c3aed;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.full-width {
+  width: 100%;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.orderbook-info {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 8px;
+  margin-bottom: 24px;
+}
+
+:host-context(.dark) .orderbook-info {
+  background: #0f172a;
+}
+
+.info-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.info-row span {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.info-row strong {
+  font-size: 16px;
+  color: #0f172a;
+}
+
+:host-context(.dark) .info-row strong {
+  color: #f1f5f9;
+}
+
+.info-row strong.price {
+  color: #3b82f6;
+}
+
+.info-row strong.buy {
+  color: #059669;
+}
+
+.info-row strong.sell {
+  color: #dc2626;
+}
+
+.orderbook-table {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.table-side {
+  flex: 1;
+}
+
+.side-header {
+  margin-bottom: 12px;
+  padding: 10px;
+  border-radius: 6px;
+  text-align: center;
+}
+
+.side-header.buy {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+:host-context(.dark) .side-header.buy {
+  background: #064e3b;
+  color: #6ee7b7;
+}
+
+.side-header.sell {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+:host-context(.dark) .side-header.sell {
+  background: #7f1d1d;
+  color: #fecaca;
+}
+
+.table-header {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #f1f5f9;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 8px;
+}
+
+:host-context(.dark) .table-header {
+  background: #0f172a;
+}
+
+.table-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.order-level {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+  transition: all 0.2s;
+}
+
+.order-level.bid {
+  background: rgba(5, 150, 105, 0.05);
+  border-left: 3px solid #059669;
+}
+
+:host-context(.dark) .order-level.bid {
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.order-level.bid:hover {
+  background: rgba(5, 150, 105, 0.1);
+}
+
+.order-level.ask {
+  background: rgba(220, 38, 38, 0.05);
+  border-left: 3px solid #dc2626;
+}
+
+:host-context(.dark) .order-level.ask {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+.order-level.ask:hover {
+  background: rgba(220, 38, 38, 0.1);
+}
+
+.order-level .price {
+  font-weight: 600;
+  color: #0f172a;
+}
+
+:host-context(.dark) .order-level .price {
+  color: #f1f5f9;
+}
+
+.order-level.bid .price {
+  color: #059669;
+}
+
+.order-level.ask .price {
+  color: #dc2626;
+}
+
+.order-level .quantity,
+.order-level .total {
+  color: #475569;
+}
+
+:host-context(.dark) .order-level .quantity,
+:host-context(.dark) .order-level .total {
+  color: #94a3b8;
+}
+
+.spread-divider {
+  padding: 16px;
+  text-align: center;
+  border-top: 2px dashed #cbd5e1;
+  border-bottom: 2px dashed #cbd5e1;
+}
+
+:host-context(.dark) .spread-divider {
+  border-color: #475569;
+}
+
+.spread-value {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.spread-value span {
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+.spread-value strong {
+  font-size: 18px;
+  color: #f59e0b;
+}
+
+.empty-state {
+  padding: 40px 20px;
+  text-align: center;
+  color: #94a3b8;
+  font-size: 14px;
+  font-style: italic;
+}
+
+.panel-footer {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid #e2e8f0;
+  display: flex;
+  justify-content: center;
+}
+
+:host-context(.dark) .panel-footer {
+  border-top-color: #334155;
+}

@@ -1,0 +1,151 @@
+<div class="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4">
+  <div class="flex items-center justify-between mb-4">
+    <div class="font-semibold">📖 Carnet d'Ordres - {{ symbol }}</div>
+    <div class="flex gap-2">
+      <span class="text-xs text-gray-500">{{ lastLoadTime }}</span>
+      <button 
+        (click)="loadOrderBook()" 
+        [disabled]="isLoading"
+        class="px-3 py-1 text-xs rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+        title="Rafraîchir le carnet">
+        {{ isLoading ? '🔄 Chargement...' : '🔄 Actualiser' }}
+      </button>
+    
+    </div>
+  </div>
+
+  
+  <div *ngIf="isLoading && !orderBook" class="text-center py-8 text-gray-500">
+    🔄 Chargement du carnet d'ordres...
+  </div>
+  
+  <!-- DEBUG INFO -->
+  <div *ngIf="!isLoading && orderBook" class="mb-3 p-2 bg-blue-50 dark:bg-blue-900/20 rounded text-xs">
+    <div class="font-semibold text-blue-700 dark:text-blue-300 mb-1">📊 Debug Info:</div>
+    <div class="text-gray-600 dark:text-gray-400">
+      Symbole: {{ symbol }} | 
+      Bids: {{ getBidPrices().length }} niveaux ({{ getTotalBids() }} actions) | 
+      Asks: {{ getAskPrices().length }} niveaux ({{ getTotalAsks() }} actions) |
+      LastPrice: {{ orderBook.lastPrice || 'N/A' }}
+    </div>
+  </div>
+  
+  <!-- Message si aucun ordre -->
+  <div *ngIf="!isLoading && orderBook && getBidPrices().length === 0 && getAskPrices().length === 0" 
+       class="mb-3 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded text-sm border border-yellow-300 dark:border-yellow-700">
+    <div class="font-semibold text-yellow-700 dark:text-yellow-300 mb-1">⚠️ Aucun ordre trouvé</div>
+    <div class="text-yellow-600 dark:text-yellow-400 text-xs">
+      Le carnet est vide pour {{ symbol }}. Vérifiez :
+      <ul class="list-disc ml-4 mt-1">
+        <li>Que des ordres existent en base de données</li>
+        <li>Que le symbole correspond ({{ symbol }})</li>
+        <li>La console (F12) pour les logs détaillés</li>
+      </ul>
+    </div>
+  </div>
+  
+  <div *ngIf="!isLoading && orderBook" class="space-y-4">
+    <!-- Prix de référence -->
+    <div *ngIf="orderBook && orderBook.lastPrice && orderBook.lastPrice > 0" class="text-center py-2 bg-gray-100 dark:bg-gray-800 rounded-lg">
+      <div class="text-xs text-gray-500 dark:text-gray-400">Dernier Prix</div>
+      <div class="text-lg font-bold text-gray-900 dark:text-gray-100">
+        € {{ orderBook.lastPrice | number:'1.2-2' }}
+      </div>
+    </div>
+    
+    <div class="grid grid-cols-2 gap-4">
+      <!-- Colonne VENTES (ASKS) - Rouge -->
+      <div>
+        <div class="text-xs font-semibold text-red-600 dark:text-red-400 mb-2 flex items-center">
+          <span class="mr-1">📤</span> VENTES ({{ getAskPrices().length }})
+        </div>
+        <div class="space-y-1">
+          <div *ngFor="let price of getAskPrices().slice(0, 10)" 
+               class="relative text-xs p-2 rounded bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+            <!-- Barre de profondeur -->
+            <div 
+              class="absolute inset-0 bg-red-100 dark:bg-red-800/30 rounded"
+              [style.width.%]="getDepthBarWidth(getAskQuantity(price), 'ask')">
+            </div>
+            <!-- Contenu -->
+            <div class="relative z-10 flex justify-between items-center">
+              <span class="font-semibold text-red-700 dark:text-red-300">
+                € {{ price | number:'1.2-2' }}
+              </span>
+              <span class="text-red-600 dark:text-red-400">
+                {{ getAskQuantity(price) | number:'1.0-0' }}
+              </span>
+            </div>
+          </div>
+          
+          <div *ngIf="getAskPrices().length === 0" class="text-xs text-gray-400 text-center py-4">
+            Aucun ordre de vente
+          </div>
+          
+          <div *ngIf="getAskPrices().length > 10" class="text-xs text-gray-400 text-center py-1">
+            +{{ getAskPrices().length - 10 }} niveaux...
+          </div>
+        </div>
+      </div>
+      
+      <!-- Colonne ACHATS (BIDS) - Vert -->
+      <div>
+        <div class="text-xs font-semibold text-emerald-600 dark:text-emerald-400 mb-2 flex items-center">
+          <span class="mr-1">📥</span> ACHATS ({{ getBidPrices().length }})
+        </div>
+        <div class="space-y-1">
+          <div *ngFor="let price of getBidPrices().slice(0, 10)" 
+               class="relative text-xs p-2 rounded bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800">
+            <!-- Barre de profondeur -->
+            <div 
+              class="absolute inset-0 bg-emerald-100 dark:bg-emerald-800/30 rounded"
+              [style.width.%]="getDepthBarWidth(getBidQuantity(price), 'bid')">
+            </div>
+            <!-- Contenu -->
+            <div class="relative z-10 flex justify-between items-center">
+              <span class="font-semibold text-emerald-700 dark:text-emerald-300">
+                € {{ price | number:'1.2-2' }}
+              </span>
+              <span class="text-emerald-600 dark:text-emerald-400">
+                {{ getBidQuantity(price) | number:'1.0-0' }}
+              </span>
+            </div>
+          </div>
+          
+          <div *ngIf="getBidPrices().length === 0" class="text-xs text-gray-400 text-center py-4">
+            Aucun ordre d'achat
+          </div>
+          
+          <div *ngIf="getBidPrices().length > 10" class="text-xs text-gray-400 text-center py-1">
+            +{{ getBidPrices().length - 10 }} niveaux...
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats bar (Bid/Ask/Last) placed between Buy/Sell and orders list -->
+    <div class="mt-2" *ngIf="showStats">
+      <app-stats-bar [symbol]="symbol" [pollInterval]="2000"></app-stats-bar>
+    </div>
+    
+    <!-- Statistiques -->
+    <div class="pt-3 border-t border-gray-200 dark:border-gray-700 grid grid-cols-2 gap-2 text-xs">
+      <div class="text-center p-2 bg-emerald-50 dark:bg-emerald-900/20 rounded">
+        <div class="text-gray-500 dark:text-gray-400">Total Achats</div>
+        <div class="font-semibold text-emerald-700 dark:text-emerald-300">
+          {{ getTotalBids() | number:'1.0-0' }}
+        </div>
+      </div>
+      <div class="text-center p-2 bg-red-50 dark:bg-red-900/20 rounded">
+        <div class="text-gray-500 dark:text-gray-400">Total Ventes</div>
+        <div class="font-semibold text-red-700 dark:text-red-300">
+          {{ getTotalAsks() | number:'1.0-0' }}
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div *ngIf="!isLoading && !orderBook" class="text-center py-8 text-gray-500">
+    Aucune donnée disponible
+  </div>
+</div>

@@ -1,0 +1,112 @@
+<div class="depth-chart" [style.width.px]="width">
+  <!-- Chart -->
+  <div
+    class="chart-wrapper"
+    [style.width.px]="width"
+    [style.height.px]="height"
+  >
+    <svg
+      [attr.viewBox]="'0 0 ' + width + ' ' + height"
+      [attr.width]="width"
+      [attr.height]="height"
+    >
+      <!-- Lignes horizontales volume -->
+      <g *ngFor="let tick of volumeTicksY" class="volume-tick">
+        <line
+          [attr.x1]="0"
+          [attr.y1]="tick.y"
+          [attr.x2]="width"
+          [attr.y2]="tick.y"
+          stroke="#1f2937"
+          stroke-dasharray="2 2"
+          stroke-width="0.5"
+        />
+        <text
+          [attr.x]="5"
+          [attr.y]="tick.y - 3"
+          fill="#6b7280"
+          font-size="10"
+        >
+          {{ tick.label }}
+        </text>
+      </g>
+
+      <!-- Barres BUY (vert) -->
+      <g *ngFor="let bar of buyBars">
+        <rect
+          [attr.x]="bar.x"
+          [attr.y]="bar.y"
+          [attr.width]="barWidth - 2"
+          [attr.height]="bar.height"
+          fill="#10b981"
+          stroke="#059669"
+          stroke-width="1"
+        />
+        <text
+          [attr.x]="bar.x + barWidth/2"
+          [attr.y]="height - 38"
+          text-anchor="middle"
+          fill="#10b981"
+          font-size="9"
+          font-weight="500"
+        >
+          {{ bar.price | number : '1.0-0' }}
+        </text>
+      </g>
+
+      <!-- Barres SELL (rouge) -->
+      <g *ngFor="let bar of sellBars">
+        <rect
+          [attr.x]="bar.x"
+          [attr.y]="bar.y"
+          [attr.width]="barWidth - 2"
+          [attr.height]="bar.height"
+          fill="#ef4444"
+          stroke="#dc2626"
+          stroke-width="1"
+        />
+        <text
+          [attr.x]="bar.x + barWidth/2"
+          [attr.y]="height - 38"
+          text-anchor="middle"
+          fill="#ef4444"
+          font-size="9"
+          font-weight="500"
+        >
+          {{ bar.price | number : '1.0-0' }}
+        </text>
+      </g>
+
+      <!-- Légendes axes -->
+      <text
+        [attr.x]="5"
+        [attr.y]="15"
+        fill="#9ca3af"
+        font-size="11"
+        font-weight="600"
+      >
+        Volume
+      </text>
+      <text
+        [attr.x]="width / 4"
+        [attr.y]="height - 5"
+        text-anchor="middle"
+        fill="#10b981"
+        font-size="10"
+        font-weight="600"
+      >
+        Buy (Bid)
+      </text>
+      <text
+        [attr.x]="(width * 3) / 4"
+        [attr.y]="height - 5"
+        text-anchor="middle"
+        fill="#ef4444"
+        font-size="10"
+        font-weight="600"
+      >
+        Sell (Ask)
+      </text>
+    </svg>
+  </div>
+</div>

@@ -1,0 +1,21 @@
+.depth-chart {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.chart-wrapper {
+  background: #ffffff;
+  padding: 10px;
+}
+
+// Dark mode
+:host-context(.dark) .depth-chart {
+  background: #0b0f14;
+  border-color: #1f2937;
+}
+
+:host-context(.dark) .chart-wrapper {
+  background: #0b0f14;
+}
