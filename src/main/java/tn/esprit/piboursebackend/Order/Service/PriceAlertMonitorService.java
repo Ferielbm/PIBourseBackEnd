@@ -91,7 +91,7 @@ public class PriceAlertMonitorService {
             if (currentPrice.compareTo(alert.getMinPrice()) >= 0) {
                 triggered = true;
                 triggeredType = "MIN_REACHED";
-                log.info("✅ Prix {} >= {} - ALERTE MIN_REACHED DÉCLENCHÉE!", 
+                log.info("✅ Prix {    } >= {} - ALERTE MIN_REACHED DÉCLENCHÉE!",
                     currentPrice, alert.getMinPrice());
             }
         }

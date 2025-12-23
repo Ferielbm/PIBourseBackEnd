@@ -31,3 +31,10 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Angular frontend (PIBourseBackEnd-angular-frontend) ###
+PIBourseBackEnd-angular-frontend/node_modules/
+PIBourseBackEnd-angular-frontend/dist/
+PIBourseBackEnd-angular-frontend/.angular/
+PIBourseBackEnd-angular-frontend/.cache/
+PIBourseBackEnd-angular-frontend/.env*
